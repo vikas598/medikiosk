@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
 from app.db import supabase
+from app.schema import ApproveRequest
 
-router = APIRouter()
+router = APIRouter(prefix="/doctor", tags=["doctor"])
 
 @router.get("/queue")
 def get_queue():
@@ -27,8 +27,6 @@ def get_session_detail(session_id: str):
         "summary": summary.data[0] if summary.data else None
     }
 
-class ApproveRequest(BaseModel):
-    edits: dict | None = None
 
 @router.post("/sessions/{session_id}/approve")
 def approve(session_id: str, req: ApproveRequest):
