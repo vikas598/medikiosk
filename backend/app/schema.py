@@ -150,6 +150,7 @@ class ConsentResponse(BaseModel):
 class TurnRequest(BaseModel):
     """Patient's response to the current question (text mode)."""
     response: str = Field(..., min_length=1)      # what the patient said/typed
+    question: Optional[str] = None                # question shown before this response
 
 
 class TurnResponse(BaseModel):
@@ -384,4 +385,4 @@ class VerifyHandoffResponse(BaseModel):
     upload_claim_token: str
 
 class HandoffStatusResponse(BaseModel):
-    status: str  # "pending", "claimed", "expired"
+    status: str  # "pending", "claimed", "expired"

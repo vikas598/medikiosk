@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException
 from app.db import supabase
 from datetime import datetime
 
-from app.schema import TurnRequest, ConsentRequest 
+from app.adapters.llm import call_llm_json
+from app.schema import TurnRequest, ConsentRequest
 
 router = APIRouter(prefix="/kiosk", tags=["kiosk"])
 
@@ -33,45 +34,70 @@ def record_consent(session_id: str, req: ConsentRequest):
     
     return {"status": "ok"}
 
-# Interview turn (HARDCODED response for Day 1)
-HARDCODED_QUESTIONS = [
-    "What brings you to the hospital today?",
-    "How long have you been experiencing this?",
-    "On a scale of 1 to 10, how severe is it?",
-    "Have you taken any medication for this?",
-    "Do you have any other symptoms?",
-]
+INTERVIEW_SYSTEM_PROMPT = """
+You are MediKiosk's clinical intake interviewer. Ask exactly one concise question
+at a time to collect a patient's medical history. Adapt the next question to the
+patient's answers and cover the chief complaint, history of present illness,
+past medical history, medications, allergies, family history, personal history,
+and review of systems. Do not diagnose or recommend treatment.
+
+Return only valid JSON with this exact shape:
+{
+  "question": "string or null",
+  "touch_options": ["string"],
+  "is_complete": false
+}
+
+Set is_complete to true and question to null only when enough history has been
+collected. Use an empty touch_options array when free-text is appropriate.
+"""
+
+
+def get_next_question(session_id: str, turns: list[dict], patient_answer: str) -> dict:
+    """Generate the next interview turn from the stored transcript."""
+    try:
+        result = call_llm_json(
+            system_prompt=INTERVIEW_SYSTEM_PROMPT,
+            user_message=(
+                f"Session ID: {session_id}\n"
+                f"Previous transcript: {turns}\n"
+                f"Latest patient answer: {patient_answer}"
+            ),
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Interview AI is unavailable") from exc
+
+    if not isinstance(result.get("question"), (str, type(None))):
+        raise HTTPException(status_code=502, detail="Interview AI returned invalid question data")
+
+    return {
+        "question": result.get("question"),
+        "touch_options": result.get("touch_options", []),
+        "is_complete": bool(result.get("is_complete", False)),
+    }
 
 @router.post("/sessions/{session_id}/interview/turn")
 def interview_turn(session_id: str, req: TurnRequest):
     # Fetch transcript
     result = supabase.table("transcripts").select("*").eq("session_id", session_id).execute()
-    
+
+    turns = result.data[0]["turns"] if result.data else []
+    turns.append({
+        "q": req.question or "",
+        "a": req.response,
+        "timestamp": datetime.now().isoformat(),
+    })
+
     if not result.data:
-        # First turn — create transcript
         supabase.table("transcripts").insert({
             "session_id": session_id,
-            "turns": [{"q": HARDCODED_QUESTIONS[0], "a": req.response, "timestamp": datetime.now().isoformat()}]
+            "turns": turns,
         }).execute()
         supabase.table("intake_sessions").update({"state": "interviewing"}).eq("id", session_id).execute()
-        next_q_idx = 1
     else:
-        turns = result.data[0]["turns"]
-        if len(turns) >= len(HARDCODED_QUESTIONS):
-            return {"question": None, "is_complete": True}
-            
-        turns.append({"q": HARDCODED_QUESTIONS[len(turns)], "a": req.response, "timestamp": datetime.now().isoformat()})
         supabase.table("transcripts").update({"turns": turns}).eq("session_id", session_id).execute()
-        next_q_idx = len(turns)
-    
-    if next_q_idx >= len(HARDCODED_QUESTIONS):
-        return {"question": None, "is_complete": True}
-    
-    return {
-        "question": HARDCODED_QUESTIONS[next_q_idx],
-        "touch_options": [],
-        "is_complete": False
-    }
+
+    return get_next_question(session_id, turns, req.response)
 
 # Finalize — generate hardcoded summary
 @router.post("/sessions/{session_id}/finalize")

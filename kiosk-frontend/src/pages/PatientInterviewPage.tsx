@@ -30,7 +30,7 @@ export const PatientInterviewPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const res = await submitTurn(session.id, textToSubmit);
+      const res = await submitTurn(session.id, textToSubmit, currentQuestion);
       setAnswer('');
 
       if (res.is_complete || !res.question) {

@@ -64,9 +64,14 @@ export const recordConsent = async (sessionId: string, granted: boolean) => {
 /**
  * Submit interview turn text response.
  */
-export const submitTurn = async (sessionId: string, responseText: string): Promise<TurnResponse> => {
+export const submitTurn = async (
+  sessionId: string,
+  responseText: string,
+  question?: string,
+): Promise<TurnResponse> => {
   const res = await api.post<TurnResponse>(`/kiosk/sessions/${sessionId}/interview/turn`, {
     response: responseText,
+    question,
   });
   return res.data;
 };

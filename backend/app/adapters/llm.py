@@ -41,22 +41,22 @@ def call_llm_json(system_prompt: str, user_message: str, max_tokens: int | None 
     return json.loads(response.content)
 
 
-# Quick test — run this file directly to verify the LLM connection works
-if __name__ == "__main__":
-    # Test 1: Basic text call
-    print("--- Test 1: Basic text call ---")
-    result = call_llm(
-        system_prompt="You are a helpful medical assistant.",
-        user_message="What is SOCRATES in clinical medicine? Answer in 2 sentences.",
-    )
-    print(result)
-    print()
+# # Quick test — run this file directly to verify the LLM connection works
+# if __name__ == "__main__":
+#     # Test 1: Basic text call
+#     print("--- Test 1: Basic text call ---")
+#     result = call_llm(
+#         system_prompt="You are a helpful medical assistant.",
+#         user_message="What is SOCRATES in clinical medicine? Answer in 2 sentences.",
+#     )
+#     print(result)
+#     print()
 
-    # Test 2: JSON call
-    print("--- Test 2: JSON call ---")
-    result_json = call_llm_json(
-        system_prompt="You are a helpful assistant. Always respond in JSON.",
-        user_message='What is SOCRATES in clinical medicine? Respond as {"answer": "..."}',
-    )
-    print(result_json)
-    print(f"Type: {type(result_json)}")
+#     # Test 2: JSON call
+#     print("--- Test 2: JSON call ---")
+#     result_json = call_llm_json(
+#         system_prompt="You are a helpful assistant. Always respond in JSON.",
+#         user_message='What is SOCRATES in clinical medicine? Respond as {"answer": "..."}',
+#     )
+#     print(result_json)
+#     print(f"Type: {type(result_json)}")
