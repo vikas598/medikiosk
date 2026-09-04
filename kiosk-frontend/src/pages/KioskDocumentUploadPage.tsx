@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { FileUp, ArrowLeft, ArrowRight, CheckCircle2, FileText, Smartphone, ExternalLink } from 'lucide-react';
-import { documentService } from '../lib/documentService';
-import type { UploadedDocument } from '../lib/documentService';
+import { FileUp, ArrowLeft, Smartphone, ExternalLink } from 'lucide-react';
 
 export const KioskDocumentUploadPage: React.FC = () => {
   const navigate = useNavigate();
@@ -53,7 +51,7 @@ export const KioskDocumentUploadPage: React.FC = () => {
   useEffect(() => {
     if (!handoffToken) return;
 
-    let intervalId: NodeJS.Timeout;
+    let intervalId: ReturnType<typeof setInterval>;
 
     const checkStatus = async () => {
       try {
