@@ -56,7 +56,7 @@ def get_session_detail(session_id: str):
     session_row = session.data[0]
     transcript = supabase.table("transcripts").select("*").eq("session_id", session_id).execute()
     summary = supabase.table("summaries").select("*").eq("session_id", session_id).execute()
-    documents_query = supabase.table("documents").select("*").eq("session_id", session_id).order("uploaded_at", desc=True).execute()
+    documents_query = supabase.table("documents").select("*").eq("session_id", session_id).order("created_at", desc=True).execute()
 
     transcript_data = (transcript.data[0] if transcript.data else {"turns": []})
     summary_row = summary.data[0] if summary.data else None
@@ -90,7 +90,7 @@ def get_session_detail(session_id: str):
             "file_type": doc.get("file_type"),
             "storage_path": storage_path,
             "size": doc.get("size"),
-            "uploaded_at": doc.get("uploaded_at"),
+            "uploaded_at": doc.get("uploaded_at") or doc.get("created_at"),
             "url": signed_url,
         })
 

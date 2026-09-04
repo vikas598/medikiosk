@@ -4,10 +4,12 @@ import {
   ArrowLeft,
   CheckCircle,
   FileText,
-  FileUp,
+  Files,
   Loader2,
   ShieldAlert,
   ExternalLink,
+  AlertTriangle,
+  MessageSquare,
 } from 'lucide-react';
 import { approveDoctorSession, getDoctorSessionDetail } from '../lib/api';
 import type { DoctorDocument, DoctorSessionDetailResponse } from '../lib/types';
@@ -17,6 +19,14 @@ const formatTimestamp = (value?: string | null) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString();
+};
+
+const formatLabel = (value: string) => value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+
+const formatSummaryValue = (value: unknown) => {
+  if (Array.isArray(value)) return value.join(', ');
+  if (typeof value === 'object' && value !== null) return JSON.stringify(value);
+  return String(value);
 };
 
 export const DoctorSessionDetailPage: React.FC = () => {
@@ -114,6 +124,15 @@ export const DoctorSessionDetailPage: React.FC = () => {
   const summaryEntries = session.summary
     ? Object.entries(session.summary).filter(([, value]) => value !== null && value !== undefined && value !== '')
     : [];
+  const summaryFlags = Array.isArray(session.summary?.red_flags_noted)
+    ? session.summary.red_flags_noted.filter((flag): flag is string => typeof flag === 'string' && flag.trim().length > 0)
+    : [];
+  const flagReadings = [
+    ...(session.priority_flag
+      ? [{ label: 'Priority flag', detail: session.priority_reason || 'Priority flag raised for this session.' }]
+      : []),
+    ...summaryFlags.map((flag) => ({ label: 'Summary flag', detail: flag })),
+  ];
 
   return (
     <div className="flex-1 flex flex-col px-4 py-8 max-w-7xl mx-auto w-full">
@@ -144,10 +163,67 @@ export const DoctorSessionDetailPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.9fr] gap-6 mt-8">
-        <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-6">
+        <section id="summary" className="bg-white rounded-[2rem] shadow-xl border-2 border-teal-200 p-6 scroll-mt-8">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4 mb-5">
+            <div className="flex items-center gap-3">
+              <FileText className="w-7 h-7 text-teal-700" />
+              <div>
+                <h2 className="text-2xl font-black text-[#0C3B4A]">AI Clinical Summary</h2>
+                <p className="text-sm text-slate-500">Review the information generated from this consultation.</p>
+              </div>
+            </div>
+            {session.summary ? (
+              <span className="px-3 py-1.5 rounded-full bg-amber-100 text-amber-900 text-xs font-black uppercase">{session.state === 'approved' ? 'Approved' : 'Draft'}</span>
+            ) : null}
+          </div>
+
+          {summaryEntries.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {summaryEntries.map(([key, value]) => (
+                <div key={key} className={key === 'hpi' || key === 'clinical_impression' ? 'md:col-span-2 rounded-2xl bg-teal-50 border border-teal-100 p-4' : 'rounded-2xl bg-slate-50 border border-slate-200 p-4'}>
+                  <dt className="text-xs font-black uppercase tracking-wide text-slate-500">{formatLabel(key)}</dt>
+                  <dd className="mt-2 text-slate-800 whitespace-pre-wrap leading-relaxed">{formatSummaryValue(value)}</dd>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-slate-600">
+              Summary not available yet.
+            </div>
+          )}
+        </section>
+
+        <section id="flags" className={`rounded-[2rem] shadow-xl p-6 scroll-mt-8 ${flagReadings.length > 0 ? 'bg-amber-50 border-2 border-amber-300' : 'bg-white border border-slate-200'}`}>
+          <div className="flex items-center gap-3 border-b border-slate-200/80 pb-4 mb-4">
+            <ShieldAlert className={`w-7 h-7 ${flagReadings.length > 0 ? 'text-amber-700' : 'text-slate-500'}`} />
+            <div>
+              <h2 className="text-2xl font-black text-[#0C3B4A]">Flags & Risk Readings</h2>
+              <p className="text-sm text-slate-600">Recorded indicators for this session.</p>
+            </div>
+          </div>
+          {flagReadings.length > 0 ? (
+            <div className="space-y-3">
+              {flagReadings.map((flag, index) => (
+                <div key={`${flag.label}-${index}`} className="flex gap-3 rounded-2xl border border-amber-200 bg-white/80 p-4">
+                  <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+                  <div>
+                    <p className="font-black text-amber-950">{flag.label}</p>
+                    <p className="text-slate-700 mt-1">{flag.detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-slate-600">No flags recorded for this session.</p>
+          )}
+        </section>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.9fr] gap-6 mt-6">
+        <section id="transcript" className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-6 scroll-mt-8">
           <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-4">
             <div className="flex items-center gap-3">
-              <FileText className="w-6 h-6 text-[#0C3B4A]" />
+              <MessageSquare className="w-6 h-6 text-[#0C3B4A]" />
               <h2 className="text-2xl font-black text-[#0C3B4A]">Transcript</h2>
             </div>
             <span className="text-sm text-slate-500">{transcriptTurns.length} turns</span>
@@ -171,13 +247,13 @@ export const DoctorSessionDetailPage: React.FC = () => {
               No transcript is available for this session yet.
             </div>
           )}
-        </div>
+        </section>
 
         <div className="space-y-6">
-          <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-6">
+          <section id="documents" className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-6 scroll-mt-8">
             <div className="flex items-center gap-3 border-b border-slate-200 pb-4 mb-4">
-              <FileUp className="w-6 h-6 text-[#0C3B4A]" />
-              <h2 className="text-2xl font-black text-[#0C3B4A]">Uploaded Document</h2>
+              <Files className="w-6 h-6 text-[#0C3B4A]" />
+              <h2 className="text-2xl font-black text-[#0C3B4A]">Documents</h2>
             </div>
 
             {uploadedDocs.length > 0 ? (
@@ -208,33 +284,7 @@ export const DoctorSessionDetailPage: React.FC = () => {
                 No uploaded document has been associated with this session yet.
               </div>
             )}
-          </div>
-
-          <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-6">
-            <div className="flex items-center gap-3 border-b border-slate-200 pb-4 mb-4">
-              <ShieldAlert className="w-6 h-6 text-amber-600" />
-              <h2 className="text-2xl font-black text-[#0C3B4A]">Summary</h2>
-            </div>
-
-            {summaryEntries.length > 0 ? (
-              <dl className="space-y-4">
-                {summaryEntries.map(([key, value]) => (
-                  <div key={key}>
-                    <dt className="text-xs font-black uppercase tracking-wide text-slate-500">
-                      {key.replace(/_/g, ' ')}
-                    </dt>
-                    <dd className="mt-1 text-slate-800 whitespace-pre-wrap">
-                      {Array.isArray(value) ? value.join(', ') : String(value)}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            ) : (
-              <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-slate-600">
-                No summary is available for this session yet.
-              </p>
-            )}
-          </div>
+          </section>
 
           <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-6">
             <h2 className="text-2xl font-black text-[#0C3B4A] mb-4">Ready to continue</h2>
