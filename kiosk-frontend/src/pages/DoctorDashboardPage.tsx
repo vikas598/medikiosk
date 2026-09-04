@@ -25,10 +25,10 @@ export const DoctorDashboardPage: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadQueue = useCallback(async (manual = false) => {
+  const loadQueue = useCallback(async (manual = false, background = false) => {
     if (manual) {
       setRefreshing(true);
-    } else {
+    } else if (!background) {
       setLoading(true);
     }
     setError(null);
@@ -46,6 +46,12 @@ export const DoctorDashboardPage: React.FC = () => {
 
   useEffect(() => {
     void loadQueue(false);
+
+    const refreshInterval = window.setInterval(() => {
+      void loadQueue(false, true);
+    }, 5000);
+
+    return () => window.clearInterval(refreshInterval);
   }, [loadQueue]);
 
   const handleLogout = () => {

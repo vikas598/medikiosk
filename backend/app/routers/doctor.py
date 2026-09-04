@@ -59,7 +59,10 @@ def get_session_detail(session_id: str):
     documents_query = supabase.table("documents").select("*").eq("session_id", session_id).order("uploaded_at", desc=True).execute()
 
     transcript_data = (transcript.data[0] if transcript.data else {"turns": []})
-    summary_data = summary.data[0] if summary.data else None
+    summary_row = summary.data[0] if summary.data else None
+    summary_data = (summary_row or {}).get("structured") if summary_row else None
+    if summary_data is None:
+        summary_data = summary_row
     documents = []
     for doc in documents_query.data or []:
         signed_url = None

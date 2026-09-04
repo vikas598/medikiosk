@@ -56,7 +56,7 @@ def interview_turn(session_id: str, req: TurnRequest):
         supabase.table("intake_sessions").update({"state": "interviewing"}).eq("id", session_id).execute()
         next_q_idx = 1
     else:
-        turns = result.data[0]["turns"]
+        turns = result.data[0]["turns"] or []
         if len(turns) >= len(HARDCODED_QUESTIONS):
             return {"question": None, "is_complete": True}
             

@@ -23,12 +23,14 @@ export const PatientInterviewPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [isComplete, setIsComplete] = useState<boolean>(false);
   const [summary, setSummary] = useState<StructuredSummary | null>(null);
+  const [skipping, setSkipping] = useState(false);
 
   const handleNextTurn = async (responseVal?: string) => {
     const textToSubmit = responseVal || answer;
     if (!textToSubmit.trim() || !session) return;
 
     setLoading(true);
+    setSkipping(textToSubmit === '[Skipped by patient]');
     try {
       const res = await submitTurn(session.id, textToSubmit);
       setAnswer('');
@@ -46,6 +48,7 @@ export const PatientInterviewPage: React.FC = () => {
       console.error('Turn submission error:', err);
     } finally {
       setLoading(false);
+      setSkipping(false);
     }
   };
 
@@ -131,6 +134,14 @@ export const PatientInterviewPage: React.FC = () => {
                       <Send className="w-7 h-7" />
                     </>
                   )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleNextTurn('[Skipped by patient]')}
+                  disabled={loading}
+                  className="md:col-span-3 h-14 border-2 border-slate-300 hover:border-slate-500 text-slate-700 font-bold text-lg rounded-2xl transition-all disabled:opacity-50"
+                >
+                  {skipping ? 'Skipping question...' : "I'm not comfortable with this question — skip"}
                 </button>
               </div>
             </div>

@@ -111,6 +111,9 @@ export const DoctorSessionDetailPage: React.FC = () => {
   const transcriptTurns = session.transcript?.turns || [];
   const uploadedDocs = session.documents || [];
   const isReadyForApproval = session.state === 'summary_ready';
+  const summaryEntries = session.summary
+    ? Object.entries(session.summary).filter(([, value]) => value !== null && value !== undefined && value !== '')
+    : [];
 
   return (
     <div className="flex-1 flex flex-col px-4 py-8 max-w-7xl mx-auto w-full">
@@ -213,13 +216,24 @@ export const DoctorSessionDetailPage: React.FC = () => {
               <h2 className="text-2xl font-black text-[#0C3B4A]">Summary</h2>
             </div>
 
-            <button
-              type="button"
-              disabled
-              className="w-full bg-slate-200 text-slate-500 font-bold px-5 py-3 rounded-2xl cursor-not-allowed opacity-80"
-            >
-              Summary preview coming soon
-            </button>
+            {summaryEntries.length > 0 ? (
+              <dl className="space-y-4">
+                {summaryEntries.map(([key, value]) => (
+                  <div key={key}>
+                    <dt className="text-xs font-black uppercase tracking-wide text-slate-500">
+                      {key.replace(/_/g, ' ')}
+                    </dt>
+                    <dd className="mt-1 text-slate-800 whitespace-pre-wrap">
+                      {Array.isArray(value) ? value.join(', ') : String(value)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-slate-600">
+                No summary is available for this session yet.
+              </p>
+            )}
           </div>
 
           <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-6">
