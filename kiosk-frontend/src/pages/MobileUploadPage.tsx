@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import type { ChangeEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import { Camera, FolderPlus, Trash2, CheckCircle2, FileText, Loader2, KeyRound, ArrowRight } from 'lucide-react';
-import { documentService } from '../lib/documentService';
 
 interface FilePreviewItem {
   id: string;
@@ -17,7 +16,6 @@ export const MobileUploadPage: React.FC = () => {
   const [isVerified, setIsVerified] = useState<boolean>(false);
   const [patientToken, setPatientToken] = useState<string>('');
   const [verifying, setVerifying] = useState<boolean>(false);
-  const [uploadClaimToken, setUploadClaimToken] = useState<string | null>(null);
 
   const [selectedFiles, setSelectedFiles] = useState<FilePreviewItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -47,8 +45,7 @@ export const MobileUploadPage: React.FC = () => {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        setUploadClaimToken(data.upload_claim_token);
+        await res.json();
         setIsVerified(true);
       } else {
         const err = await res.json();

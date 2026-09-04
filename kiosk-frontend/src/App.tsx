@@ -6,6 +6,7 @@ import { PatientTokenPage } from './pages/PatientTokenPage';
 import { PatientConsentPage } from './pages/PatientConsentPage';
 import { PatientInterviewPage } from './pages/PatientInterviewPage';
 import { DoctorDashboardPage } from './pages/DoctorDashboardPage';
+import { DoctorSessionDetailPage } from './pages/DoctorSessionDetailPage';
 import { KioskDocumentUploadPage } from './pages/KioskDocumentUploadPage';
 import { MobileUploadPage } from './pages/MobileUploadPage';
 
@@ -26,6 +27,7 @@ export default function App() {
             <Route path="/doctor" element={<DoctorAuthPage />} />
             <Route path="/doctor/signup" element={<DoctorAuthPage />} />
             <Route path="/doctor/dashboard" element={<DoctorDashboardPage />} />
+            <Route path="/doctor/session/:sessionId" element={<DoctorSessionDetailPage />} />
             <Route path="/patient" element={<PatientTokenPage />} />
             <Route path="/patient/consent" element={<PatientConsentPage />} />
             <Route path="/patient/interview" element={<PatientInterviewPage />} />

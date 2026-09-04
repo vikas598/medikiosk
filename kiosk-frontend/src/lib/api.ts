@@ -83,3 +83,18 @@ export const finalizeSession = async (sessionId: string): Promise<FinalizeRespon
   const res = await api.post<FinalizeResponse>(`/kiosk/sessions/${sessionId}/finalize`);
   return res.data;
 };
+
+export const getDoctorQueue = async () => {
+  const res = await api.get('/doctor/queue');
+  return res.data;
+};
+
+export const getDoctorSessionDetail = async (sessionId: string) => {
+  const res = await api.get(`/doctor/sessions/${sessionId}`);
+  return res.data;
+};
+
+export const approveDoctorSession = async (sessionId: string, edits?: Record<string, unknown>) => {
+  const res = await api.post(`/doctor/sessions/${sessionId}/approve`, { edits: edits || null });
+  return res.data;
+};
