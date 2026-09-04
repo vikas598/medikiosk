@@ -1,2 +1,28 @@
+# Environment & Credentials
 .env
-venv
+.env.local
+.env.*.local
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python Cache & Build
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+
+# Node / Frontend Build
+node_modules/
+dist/
+.output/
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
