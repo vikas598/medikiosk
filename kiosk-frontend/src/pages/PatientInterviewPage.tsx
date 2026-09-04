@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { HelpCircle, Send, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
+import { HelpCircle, Send, CheckCircle2, Loader2, ArrowRight, FileUp, FileText } from 'lucide-react';
 import { submitTurn, finalizeSession } from '../lib/api';
 import type { SessionResponse, StructuredSummary } from '../lib/types';
 
@@ -60,7 +60,7 @@ export const PatientInterviewPage: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col justify-between items-center px-4 py-8 max-w-4xl mx-auto w-full">
+    <div className="flex-1 flex flex-col justify-between items-center px-4 pb-12 max-w-4xl mx-auto w-full">
       {/* Header Banner */}
       <div className="w-full bg-[#0C3B4A] text-white p-6 rounded-3xl shadow-xl flex items-center justify-between border-b-4 border-[#00C9A7]">
         <div className="flex items-center gap-4">
@@ -72,6 +72,8 @@ export const PatientInterviewPage: React.FC = () => {
             <p className="text-cyan-200">Patient: {session.patients?.name || 'Session ' + session.token}</p>
           </div>
         </div>
+
+
       </div>
 
       {/* Main Card */}
@@ -114,21 +116,23 @@ export const PatientInterviewPage: React.FC = () => {
                 className="w-full p-6 rounded-2xl border-2 border-slate-300 focus:border-[#00C9A7] text-2xl font-medium text-slate-900 bg-slate-50 outline-none shadow-inner resize-none"
               />
 
-              <button
-                type="button"
-                onClick={() => handleNextTurn()}
-                disabled={loading || !answer.trim()}
-                className="w-full h-24 bg-[#00C9A7] hover:bg-[#00A389] active:scale-98 disabled:opacity-50 text-slate-950 font-black text-3xl rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 border-b-4 border-teal-800"
-              >
-                {loading ? (
-                  <Loader2 className="w-10 h-10 animate-spin" />
-                ) : (
-                  <>
-                    <span>SUBMIT ANSWER</span>
-                    <Send className="w-8 h-8" />
-                  </>
-                )}
-              </button>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleNextTurn()}
+                  disabled={loading || !answer.trim()}
+                  className="md:col-span-3 h-20 bg-gradient-to-r from-[#0D9488] to-[#059669] hover:from-teal-700 hover:to-emerald-700 active:scale-98 disabled:opacity-50 text-white font-black text-2xl rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3"
+                >
+                  {loading ? (
+                    <Loader2 className="w-8 h-8 animate-spin" />
+                  ) : (
+                    <>
+                      <span>SUBMIT ANSWER</span>
+                      <Send className="w-7 h-7" />
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         ) : (
@@ -139,16 +143,17 @@ export const PatientInterviewPage: React.FC = () => {
             </div>
 
             <div>
-              <h2 className="text-4xl font-black text-[#0C3B4A]">Intake Complete!</h2>
+              <h2 className="text-4xl font-black text-[#0C3B4A]">Your problem has been recorded</h2>
               <p className="text-2xl text-slate-600 font-medium mt-2">
-                Thank you. Your responses have been sent to hospital staff.
+                Thank you. The doctor will review your information shortly.
               </p>
             </div>
 
             {summary && (
               <div className="text-left bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-3">
-                <h4 className="font-bold text-xl text-[#0C3B4A] border-b pb-2">
-                  Clinical Summary Preview
+                <h4 className="font-bold text-xl text-[#0C3B4A] border-b pb-2 flex items-center gap-2">
+                  <FileText className="w-6 h-6 text-teal-600" />
+                  <span>Clinical Summary Preview</span>
                 </h4>
                 <p className="text-lg text-slate-800">
                   <strong className="text-slate-900">Chief Complaint:</strong> {summary.chief_complaint}
@@ -159,13 +164,26 @@ export const PatientInterviewPage: React.FC = () => {
               </div>
             )}
 
-            <button
-              onClick={() => navigate('/')}
-              className="w-full py-6 bg-[#0C3B4A] text-white font-black text-2xl rounded-2xl shadow-xl hover:bg-slate-800 active:scale-95 transition-all flex items-center justify-center gap-3"
-            >
-              <span>FINISH & RETURN TO HOME</span>
-              <ArrowRight className="w-8 h-8" />
-            </button>
+            {/* Document Upload Secondary Action before returning home */}
+            <div className="pt-2 flex flex-col md:flex-row gap-4">
+              <button
+                type="button"
+                onClick={() => navigate('/patient/documents', { state: { session } })}
+                className="flex-1 py-5 bg-teal-50 hover:bg-teal-100 text-teal-900 font-bold text-xl rounded-2xl border border-teal-300 transition-all flex items-center justify-center gap-2"
+              >
+                <FileUp className="w-6 h-6 text-teal-600" />
+                <span>Upload Medical Documents</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="flex-1 py-5 bg-[#0C3B4A] text-white font-black text-xl rounded-2xl shadow-xl hover:bg-slate-800 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <span>FINISH & RETURN TO HOME</span>
+                <ArrowRight className="w-7 h-7" />
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -57,6 +57,9 @@ def interview_turn(session_id: str, req: TurnRequest):
         next_q_idx = 1
     else:
         turns = result.data[0]["turns"]
+        if len(turns) >= len(HARDCODED_QUESTIONS):
+            return {"question": None, "is_complete": True}
+            
         turns.append({"q": HARDCODED_QUESTIONS[len(turns)], "a": req.response, "timestamp": datetime.now().isoformat()})
         supabase.table("transcripts").update({"turns": turns}).eq("session_id", session_id).execute()
         next_q_idx = len(turns)
@@ -90,3 +93,28 @@ def finalize(session_id: str):
     }).execute()
     supabase.table("intake_sessions").update({"state": "summary_ready"}).eq("id", session_id).execute()
     return {"status": "ok", "summary": hardcoded_summary}
+
+# In-memory store for handoffs (since we might not have a handoffs table)
+HANDOFFS_DB = {}
+import uuid
+
+@router.post("/sessions/{session_id}/document-handoff")
+def create_document_handoff(session_id: str):
+    handoff_token = str(uuid.uuid4())
+    # In a real app we'd store this in DB with expiration
+    HANDOFFS_DB[handoff_token] = {
+        "session_id": session_id,
+        "status": "pending",
+        "created_at": datetime.now().isoformat()
+    }
+    return {
+        "handoff_token": handoff_token,
+        "expires_at": "2099-12-31T23:59:59Z"
+    }
+
+@router.get("/document-handoff/{handoff_token}/status")
+def get_handoff_status(handoff_token: str):
+    if handoff_token not in HANDOFFS_DB:
+        raise HTTPException(status_code=404, detail="Handoff not found")
+    
+    return {"status": HANDOFFS_DB[handoff_token]["status"]}

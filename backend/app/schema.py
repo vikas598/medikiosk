@@ -365,3 +365,23 @@ class ErrorResponse(BaseModel):
 #   LLM summary output                       → LLMSummaryOutput
 #   LLM red-flag output                      → LLMRedFlagOutput
 # ============================================================
+
+
+# ============================================================
+# DOCUMENT HANDOFF & MOBILE UPLOAD SCHEMAS
+# ============================================================
+
+class CreateHandoffResponse(BaseModel):
+    handoff_token: str
+    expires_at: str
+
+class VerifyHandoffRequest(BaseModel):
+    handoff_token: str
+    patient_token: str
+
+class VerifyHandoffResponse(BaseModel):
+    status: str = "verified"
+    upload_claim_token: str
+
+class HandoffStatusResponse(BaseModel):
+    status: str  # "pending", "claimed", "expired"

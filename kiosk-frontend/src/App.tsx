@@ -6,13 +6,18 @@ import { PatientTokenPage } from './pages/PatientTokenPage';
 import { PatientConsentPage } from './pages/PatientConsentPage';
 import { PatientInterviewPage } from './pages/PatientInterviewPage';
 import { DoctorDashboardPage } from './pages/DoctorDashboardPage';
+import { KioskDocumentUploadPage } from './pages/KioskDocumentUploadPage';
+import { MobileUploadPage } from './pages/MobileUploadPage';
 
 export default function App() {
   return (
     <Router>
-      <div className="min-h-screen flex flex-col bg-[#F4F8FA] text-slate-900 font-sans selection:bg-[#00C9A7] selection:text-slate-950">
-        {/* Main Kiosk Header */}
-        <Header />
+      <div className="min-h-screen flex flex-col bg-[#071822] text-slate-900 font-sans selection:bg-[#0D9488] selection:text-white">
+        {/* Render Main Header except on standalone Mobile Upload route */}
+        <Routes>
+          <Route path="/mobile-upload/:token" element={null} />
+          <Route path="*" element={<Header />} />
+        </Routes>
 
         {/* Dynamic Route Pages */}
         <main className="flex-1 flex flex-col">
@@ -24,6 +29,8 @@ export default function App() {
             <Route path="/patient" element={<PatientTokenPage />} />
             <Route path="/patient/consent" element={<PatientConsentPage />} />
             <Route path="/patient/interview" element={<PatientInterviewPage />} />
+            <Route path="/patient/documents" element={<KioskDocumentUploadPage />} />
+            <Route path="/mobile-upload/:token" element={<MobileUploadPage />} />
           </Routes>
         </main>
       </div>
