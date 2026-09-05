@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { HelpCircle, Send, CheckCircle2, Loader2, ArrowRight, FileUp, FileText } from 'lucide-react';
 import { submitTurn, finalizeSession } from '../lib/api';
@@ -24,14 +24,17 @@ export const PatientInterviewPage: React.FC = () => {
   const [skipLoading, setSkipLoading] = useState<boolean>(false);
   const [isComplete, setIsComplete] = useState<boolean>(false);
   const [summary, setSummary] = useState<StructuredSummary | null>(null);
+  const submitInFlight = useRef(false);
 
   const handleNextTurn = async (responseVal?: string) => {
     const textToSubmit = responseVal || answer;
-    if (!textToSubmit.trim() || !session || submitLoading || skipLoading) return;
+    if (!textToSubmit.trim() || !session || submitInFlight.current) return;
 
     const isSkip = textToSubmit === '[Skipped by patient]';
+    submitInFlight.current = true;
     setSubmitLoading(!isSkip);
     setSkipLoading(isSkip);
+
     try {
       const res = await submitTurn(session.id, textToSubmit, currentQuestion);
       setAnswer('');
@@ -48,6 +51,7 @@ export const PatientInterviewPage: React.FC = () => {
     } catch (err) {
       console.error('Turn submission error:', err);
     } finally {
+      submitInFlight.current = false;
       setSubmitLoading(false);
       setSkipLoading(false);
     }

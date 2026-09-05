@@ -65,4 +65,15 @@ Use the following credentials to log into the MediKiosk doctor dashboard:
 
 
 
-> **MediKiosk** — AI-powered clinical intake and patient management system.
+> **MediKiosk** — AI-powered clinical intake and patient management system.\
+
+## TO SWITCH LLM
+
+# in .env
+# To gemini
+LLM_PROVIDER=gemini
+LLM_MODEL=gemini-2.5-flash
+
+# To groq
+LLM_PROVIDER=groq
+LLM_MODEL=openai/gpt-oss-120b
