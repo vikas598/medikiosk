@@ -20,17 +20,18 @@ export const PatientInterviewPage: React.FC = () => {
   const [touchOptions, setTouchOptions] = useState<string[]>([]);
   const [answer, setAnswer] = useState<string>('');
   const [turnIndex, setTurnIndex] = useState<number>(1);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [submitLoading, setSubmitLoading] = useState<boolean>(false);
+  const [skipLoading, setSkipLoading] = useState<boolean>(false);
   const [isComplete, setIsComplete] = useState<boolean>(false);
   const [summary, setSummary] = useState<StructuredSummary | null>(null);
-  const [skipping, setSkipping] = useState(false);
 
   const handleNextTurn = async (responseVal?: string) => {
     const textToSubmit = responseVal || answer;
-    if (!textToSubmit.trim() || !session) return;
+    if (!textToSubmit.trim() || !session || submitLoading || skipLoading) return;
 
-    setLoading(true);
-    setSkipping(textToSubmit === '[Skipped by patient]');
+    const isSkip = textToSubmit === '[Skipped by patient]';
+    setSubmitLoading(!isSkip);
+    setSkipLoading(isSkip);
     try {
       const res = await submitTurn(session.id, textToSubmit, currentQuestion);
       setAnswer('');
@@ -47,8 +48,8 @@ export const PatientInterviewPage: React.FC = () => {
     } catch (err) {
       console.error('Turn submission error:', err);
     } finally {
-      setLoading(false);
-      setSkipping(false);
+      setSubmitLoading(false);
+      setSkipLoading(false);
     }
   };
 
@@ -63,9 +64,9 @@ export const PatientInterviewPage: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col justify-between items-center px-4 pb-12 max-w-4xl mx-auto w-full">
+    <div className="flex-1 flex flex-col justify-between items-center px-4 pb-6 max-w-4xl mx-auto w-full">
       {/* Header Banner */}
-      <div className="w-full bg-[#0C3B4A] text-white p-6 rounded-3xl shadow-xl flex items-center justify-between border-b-4 border-[#00C9A7]">
+      <div className="w-full bg-[#0C3B4A] text-white p-4 md:p-5 rounded-3xl shadow-xl flex items-center justify-between border-b-4 border-[#00C9A7]">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#00C9A7] text-slate-950 flex items-center justify-center font-black text-2xl">
             Q{turnIndex}
@@ -80,7 +81,7 @@ export const PatientInterviewPage: React.FC = () => {
       </div>
 
       {/* Main Card */}
-      <div className="kiosk-card w-full p-8 md:p-12 rounded-[2.5rem] shadow-2xl border-4 border-teal-500/20 bg-white my-6">
+      <div className="kiosk-card w-full p-6 md:p-8 rounded-[2.5rem] shadow-2xl border-4 border-teal-500/20 bg-white my-4">
         {!isComplete ? (
           <div className="space-y-8">
             <div className="space-y-3">
@@ -88,7 +89,7 @@ export const PatientInterviewPage: React.FC = () => {
                 <HelpCircle className="w-8 h-8" />
                 <span>QUESTION FOR PATIENT</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-black text-[#0C3B4A] leading-tight">
+              <h2 key={turnIndex} className="question-enter text-3xl md:text-4xl font-black text-[#0C3B4A] leading-tight">
                 {currentQuestion}
               </h2>
             </div>
@@ -101,7 +102,8 @@ export const PatientInterviewPage: React.FC = () => {
                     key={i}
                     type="button"
                     onClick={() => handleNextTurn(opt)}
-                    className="py-4 px-8 rounded-2xl bg-teal-50 hover:bg-[#00C9A7] hover:text-slate-950 text-[#0C3B4A] font-bold text-xl border-2 border-teal-200 shadow-md transition-all active:scale-95"
+                    disabled={submitLoading || skipLoading}
+                    className="py-4 px-8 rounded-2xl bg-teal-50 hover:bg-[#00C9A7] hover:text-slate-950 text-[#0C3B4A] font-bold text-xl border-2 border-teal-200 shadow-md transition-all active:scale-95 disabled:opacity-50"
                   >
                     {opt}
                   </button>
@@ -112,21 +114,21 @@ export const PatientInterviewPage: React.FC = () => {
             {/* Response Input */}
             <div className="space-y-4 pt-4">
               <textarea
-                rows={3}
+                rows={2}
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 placeholder="Type or tap response here..."
-                className="w-full p-6 rounded-2xl border-2 border-slate-300 focus:border-[#00C9A7] text-2xl font-medium text-slate-900 bg-slate-50 outline-none shadow-inner resize-none"
+                className="w-full p-4 rounded-2xl border-2 border-slate-300 focus:border-[#00C9A7] text-xl font-medium text-slate-900 bg-slate-50 outline-none shadow-inner resize-none"
               />
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                 <button
                   type="button"
                   onClick={() => handleNextTurn()}
-                  disabled={loading || !answer.trim()}
-                  className="md:col-span-3 h-20 bg-gradient-to-r from-[#0D9488] to-[#059669] hover:from-teal-700 hover:to-emerald-700 active:scale-98 disabled:opacity-50 text-white font-black text-2xl rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3"
+                  disabled={submitLoading || skipLoading || !answer.trim()}
+                  className="md:col-span-3 h-16 bg-gradient-to-r from-[#0D9488] to-[#059669] hover:from-teal-700 hover:to-emerald-700 active:scale-98 disabled:opacity-50 text-white font-black text-xl rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3"
                 >
-                  {loading ? (
+                  {submitLoading ? (
                     <Loader2 className="w-8 h-8 animate-spin" />
                   ) : (
                     <>
@@ -138,10 +140,15 @@ export const PatientInterviewPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleNextTurn('[Skipped by patient]')}
-                  disabled={loading}
-                  className="md:col-span-3 h-14 border-2 border-slate-300 hover:border-slate-500 text-slate-700 font-bold text-lg rounded-2xl transition-all disabled:opacity-50"
+                  disabled={submitLoading || skipLoading}
+                  className="md:col-span-3 h-12 border-2 border-slate-300 hover:border-slate-500 text-slate-700 font-bold text-base rounded-2xl transition-all disabled:opacity-50"
                 >
-                  {skipping ? 'Skipping question...' : "I'm not comfortable with this question — skip"}
+                  {skipLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
+                      Skipping question...
+                    </>
+                  ) : "I'm not comfortable with this question — skip"}
                 </button>
               </div>
             </div>

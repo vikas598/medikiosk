@@ -1,4 +1,4 @@
-import type { SessionResponse, TurnResponse, FinalizeResponse } from './types';
+import type { SessionResponse, TurnResponse, FinalizeResponse, StructuredSummary } from './types';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -91,6 +91,11 @@ export const getDoctorQueue = async () => {
 
 export const getDoctorSessionDetail = async (sessionId: string) => {
   const res = await api.get(`/doctor/sessions/${sessionId}`);
+  return res.data;
+};
+
+export const updateDoctorSummary = async (sessionId: string, structured: StructuredSummary) => {
+  const res = await api.patch(`/doctor/sessions/${sessionId}/summary`, { structured });
   return res.data;
 };
 

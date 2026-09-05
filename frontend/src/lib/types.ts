@@ -88,7 +88,7 @@ export interface DoctorSessionDetailResponse {
   transcript: {
     turns: TranscriptTurn[];
   } | null;
-  summary: Record<string, unknown> | null;
+  summary: StructuredSummary | null;
   documents: DoctorDocument[];
 }
 

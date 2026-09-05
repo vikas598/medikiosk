@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.db import supabase
-from app.schema import ApproveRequest
+from app.schema import ApproveRequest, UpdateSummaryRequest
 
 router = APIRouter(prefix="/doctor", tags=["doctor"])
 
@@ -107,8 +107,37 @@ def get_session_detail(session_id: str):
     }
 
 
+@router.patch("/sessions/{session_id}/summary")
+def update_summary(session_id: str, req: UpdateSummaryRequest):
+    summary_result = supabase.table("summaries").select("structured").eq("session_id", session_id).execute()
+    if not summary_result.data:
+        raise HTTPException(status_code=404, detail="Summary not found for this session.")
+
+    summary_row = summary_result.data[0]
+    current_structured = summary_row.get("structured") or {}
+    updated_structured = req.structured.model_dump()
+    doctor_edits = {
+        key: {"before": current_structured.get(key), "after": value}
+        for key, value in updated_structured.items()
+        if current_structured.get(key) != value
+    }
+
+    supabase.table("summaries").update({
+        "structured": updated_structured,
+        "doctor_edits": doctor_edits,
+    }).eq("session_id", session_id).execute()
+
+    return {"status": "ok", "doctor_edits": doctor_edits}
+
+
 @router.post("/sessions/{session_id}/approve")
 def approve(session_id: str, req: ApproveRequest):
+    session_result = supabase.table("intake_sessions").select("state").eq("id", session_id).execute()
+    if not session_result.data:
+        raise HTTPException(status_code=404, detail="Patient session not found.")
+    if session_result.data[0].get("state") == "approved":
+        return {"status": "ok", "session_state": "approved"}
+
     update_data = {"status": "approved"}
     if req.edits:
         update_data["doctor_edits"] = req.edits

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Stethoscope, Users, LogOut, CheckCircle, Clock3, AlertTriangle, Loader2, RefreshCw, FileText, Files, MessageSquare } from 'lucide-react';
+import { Stethoscope, Users, LogOut, Clock3, AlertTriangle, Loader2, RefreshCw, FileText } from 'lucide-react';
 import { authService } from '../lib/authService';
 import { getDoctorQueue } from '../lib/api';
 import type { DoctorQueueItem } from '../lib/types';
@@ -59,13 +59,13 @@ export const DoctorDashboardPage: React.FC = () => {
     navigate('/');
   };
 
-  const handleOpenPatient = (patient: DoctorQueueItem, section = 'summary') => {
-    navigate(`/doctor/session/${patient.session_id}#${section}`);
+  const handleOpenPatient = (patient: DoctorQueueItem) => {
+    navigate(`/doctor/session/${patient.session_id}`);
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between items-center px-4 py-8 max-w-6xl mx-auto w-full">
-      <div className="w-full bg-[#0C3B4A] text-white p-6 rounded-3xl shadow-xl flex flex-wrap items-center justify-between gap-4 border-b-4 border-[#00C9A7]">
+    <div className="flex-1 flex flex-col justify-between items-center px-4 py-4 max-w-6xl mx-auto w-full">
+      <div className="w-full bg-[#0C3B4A] text-white p-4 md:p-5 rounded-3xl shadow-xl flex flex-wrap items-center justify-between gap-4 border-b-4 border-[#00C9A7]">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-2xl bg-[#00C9A7] text-slate-950 flex items-center justify-center">
             <Stethoscope className="w-10 h-10" />
@@ -87,7 +87,7 @@ export const DoctorDashboardPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="kiosk-card w-full p-8 md:p-12 rounded-[2.5rem] shadow-2xl border-4 border-slate-200 bg-white my-8 space-y-8">
+      <div className="kiosk-card w-full p-5 md:p-8 rounded-[2.5rem] shadow-2xl border-4 border-slate-200 bg-white my-4 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
           <div>
             <h3 className="text-3xl font-black text-[#0C3B4A]">Active Patient Queue & Triage Summaries</h3>
@@ -165,35 +165,17 @@ export const DoctorDashboardPage: React.FC = () => {
                     <span className={`px-4 py-1.5 rounded-full font-bold text-sm uppercase ${stateClass}`}>
                       {formatStateLabel(patient.state)}
                     </span>
-                    {patient.state === 'approved' ? (
-                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs uppercase">
-                        <CheckCircle className="w-4 h-4" /> Approved
-                      </span>
-                    ) : patient.state === 'interviewing' ? (
+                    {patient.state === 'interviewing' ? (
                       <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-cyan-100 text-cyan-900 font-bold text-xs uppercase">
                         <Clock3 className="w-4 h-4" /> In progress
                       </span>
                     ) : null}
                     <button
-                      onClick={() => handleOpenPatient(patient, 'summary')}
+                      onClick={() => handleOpenPatient(patient)}
                       className="inline-flex items-center gap-2 bg-[#0C3B4A] hover:bg-[#0f4c5c] text-white font-bold px-5 py-3 rounded-2xl text-base shadow-md"
                     >
                       <FileText className="w-5 h-5" />
-                      View Summary
-                    </button>
-                    <button
-                      onClick={() => handleOpenPatient(patient, 'documents')}
-                      className="inline-flex items-center gap-2 bg-white hover:bg-teal-50 text-[#0C3B4A] font-bold px-4 py-3 rounded-2xl text-base border border-teal-200"
-                    >
-                      <Files className="w-5 h-5" />
-                      Documents
-                    </button>
-                    <button
-                      onClick={() => handleOpenPatient(patient, 'transcript')}
-                      className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-slate-700 font-bold px-4 py-3 rounded-2xl text-base border border-slate-200"
-                    >
-                      <MessageSquare className="w-5 h-5" />
-                      Transcript
+                      Details
                     </button>
                   </div>
                 </div>

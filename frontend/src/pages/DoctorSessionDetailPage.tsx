@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   CheckCircle,
+  Edit3,
   FileText,
   Files,
   Loader2,
@@ -11,8 +12,8 @@ import {
   AlertTriangle,
   MessageSquare,
 } from 'lucide-react';
-import { approveDoctorSession, getDoctorSessionDetail } from '../lib/api';
-import type { DoctorDocument, DoctorSessionDetailResponse } from '../lib/types';
+import { approveDoctorSession, getDoctorSessionDetail, updateDoctorSummary } from '../lib/api';
+import type { DoctorDocument, DoctorSessionDetailResponse, StructuredSummary } from '../lib/types';
 
 const formatTimestamp = (value?: string | null) => {
   if (!value) return 'Unknown time';
@@ -36,6 +37,9 @@ export const DoctorSessionDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [approving, setApproving] = useState(false);
+  const [editingSummary, setEditingSummary] = useState(false);
+  const [savingSummary, setSavingSummary] = useState(false);
+  const [draftSummary, setDraftSummary] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!sessionId) {
@@ -52,7 +56,7 @@ export const DoctorSessionDetailPage: React.FC = () => {
         const data = await getDoctorSessionDetail(sessionId);
         setSession(data);
       } catch (err: any) {
-        setError(err?.message || 'Unable to load this patient session.');
+        setError(err?.response?.data?.detail || err?.message || 'Unable to load this patient session.');
       } finally {
         setLoading(false);
       }
@@ -62,16 +66,57 @@ export const DoctorSessionDetailPage: React.FC = () => {
   }, [sessionId]);
 
   const handleApprove = async () => {
-    if (!sessionId) return;
+    if (!sessionId || approving || session?.state !== 'summary_ready') return;
 
     setApproving(true);
     try {
       await approveDoctorSession(sessionId);
       navigate('/doctor/dashboard', { replace: true });
     } catch (err: any) {
-      setError(err?.message || 'Approval failed. Please try again.');
+      setError(err?.response?.data?.detail || err?.message || 'Approval failed. Please try again.');
     } finally {
       setApproving(false);
+    }
+  };
+
+  const startEditingSummary = () => {
+    if (!session?.summary) return;
+    setDraftSummary(
+      Object.fromEntries(
+        Object.entries(session.summary).map(([key, value]) => [key, formatSummaryValue(value)]),
+      ),
+    );
+    setError(null);
+    setEditingSummary(true);
+  };
+
+  const handleSaveSummary = async () => {
+    if (!sessionId || !session?.summary || savingSummary) return;
+
+    const structured: StructuredSummary = {
+      chief_complaint: draftSummary.chief_complaint || '',
+      hpi: draftSummary.hpi || '',
+      pmh: draftSummary.pmh || 'Not assessed',
+      psh: draftSummary.psh || 'Not assessed',
+      drug_history: draftSummary.drug_history || 'Not assessed',
+      allergy_history: draftSummary.allergy_history || 'NKDA',
+      family_history: draftSummary.family_history || 'Not assessed',
+      personal_history: draftSummary.personal_history || 'Not assessed',
+      ros: draftSummary.ros || 'Not assessed',
+      red_flags_noted: (draftSummary.red_flags_noted || '').split(/\r?\n/).map((flag) => flag.trim()).filter(Boolean),
+      clinical_impression: draftSummary.clinical_impression || 'Not assessed',
+    };
+
+    setSavingSummary(true);
+    setError(null);
+    try {
+      await updateDoctorSummary(sessionId, structured);
+      setSession({ ...session, summary: structured });
+      setEditingSummary(false);
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || err?.message || 'Unable to save the edited summary.');
+    } finally {
+      setSavingSummary(false);
     }
   };
 
@@ -177,7 +222,31 @@ export const DoctorSessionDetailPage: React.FC = () => {
             ) : null}
           </div>
 
-          {summaryEntries.length > 0 ? (
+          {editingSummary ? (
+            <div className="space-y-4">
+              {Object.entries(draftSummary).map(([key, value]) => (
+                <label key={key} className={key === 'hpi' || key === 'clinical_impression' ? 'block md:col-span-2' : 'block'}>
+                  <span className="text-xs font-black uppercase tracking-wide text-slate-500">{formatLabel(key)}</span>
+                  <textarea
+                    rows={key === 'hpi' || key === 'clinical_impression' ? 4 : 2}
+                    value={value}
+                    onChange={(event) => setDraftSummary((current) => ({ ...current, [key]: event.target.value }))}
+                    className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 p-3 text-slate-800 outline-none focus:border-teal-500"
+                  />
+                  {key === 'red_flags_noted' ? <span className="text-xs text-slate-500">Enter one flag per line.</span> : null}
+                </label>
+              ))}
+              <div className="flex flex-wrap justify-end gap-3">
+                <button type="button" onClick={() => setEditingSummary(false)} disabled={savingSummary} className="rounded-2xl border border-slate-300 px-5 py-3 font-bold text-slate-700">
+                  Cancel
+                </button>
+                <button type="button" onClick={handleSaveSummary} disabled={savingSummary} className="inline-flex items-center gap-2 rounded-2xl bg-[#0C3B4A] px-5 py-3 font-bold text-white disabled:opacity-50">
+                  {savingSummary ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+                  {savingSummary ? 'Saving...' : 'Save Summary'}
+                </button>
+              </div>
+            </div>
+          ) : summaryEntries.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {summaryEntries.map(([key, value]) => (
                 <div key={key} className={key === 'hpi' || key === 'clinical_impression' ? 'md:col-span-2 rounded-2xl bg-teal-50 border border-teal-100 p-4' : 'rounded-2xl bg-slate-50 border border-slate-200 p-4'}>
@@ -191,6 +260,12 @@ export const DoctorSessionDetailPage: React.FC = () => {
               Summary not available yet.
             </div>
           )}
+          {!editingSummary && session.summary ? (
+            <button type="button" onClick={startEditingSummary} className="mt-5 inline-flex items-center gap-2 rounded-2xl border border-teal-200 bg-teal-50 px-5 py-3 font-bold text-teal-900 hover:bg-teal-100">
+              <Edit3 className="h-5 w-5" />
+              Edit Summary
+            </button>
+          ) : null}
         </section>
 
         <section id="flags" className={`rounded-[2rem] shadow-xl p-6 scroll-mt-8 ${flagReadings.length > 0 ? 'bg-amber-50 border-2 border-amber-300' : 'bg-white border border-slate-200'}`}>
@@ -288,28 +363,35 @@ export const DoctorSessionDetailPage: React.FC = () => {
 
           <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-6">
             <h2 className="text-2xl font-black text-[#0C3B4A] mb-4">Ready to continue</h2>
-            <button
-              type="button"
-              disabled={!isReadyForApproval || approving}
-              onClick={handleApprove}
-              className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-black text-xl ${
-                !isReadyForApproval || approving
-                  ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-[#0D9488] to-[#059669] text-white hover:from-teal-700 hover:to-emerald-700'
-              }`}
-            >
-              {approving ? (
-                <>
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                  Approving...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="w-6 h-6" />
-                  Approve patient
-                </>
-              )}
-            </button>
+            {session.state === 'approved' ? (
+              <div className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-emerald-100 text-emerald-800 font-black text-xl">
+                <CheckCircle className="w-6 h-6" />
+                Approved
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={!isReadyForApproval || approving}
+                onClick={handleApprove}
+                className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-black text-xl ${
+                  !isReadyForApproval || approving
+                    ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-[#0D9488] to-[#059669] text-white hover:from-teal-700 hover:to-emerald-700'
+                }`}
+              >
+                {approving ? (
+                  <>
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    Approving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-6 h-6" />
+                    Approve patient
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
