@@ -101,11 +101,11 @@ def finalize(session_id: str):
         "personal_history": "Non-smoker, occasional alcohol",
         "ros": "No fever, no dyspnea, no palpitations"
     }
-    supabase.table("summaries").insert({
+    supabase.table("summaries").upsert({
         "session_id": session_id,
         "structured": hardcoded_summary,
         "status": "draft"
-    }).execute()
+    }, on_conflict="session_id").execute()
     supabase.table("intake_sessions").update({"state": "summary_ready"}).eq("id", session_id).execute()
     return {"status": "ok", "summary": hardcoded_summary}
 
