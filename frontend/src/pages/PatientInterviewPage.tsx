@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { HelpCircle, Send, CheckCircle2, Loader2, ArrowRight, FileUp, FileText } from 'lucide-react';
+import { HelpCircle, Send, CheckCircle2, Loader2, ArrowRight, FileUp, FileText, AlertCircle } from 'lucide-react';
 import { submitTurn, finalizeSession } from '../lib/api';
 import type { SessionResponse, StructuredSummary } from '../lib/types';
 
@@ -24,15 +24,20 @@ export const PatientInterviewPage: React.FC = () => {
   const [skipLoading, setSkipLoading] = useState<boolean>(false);
   const [isComplete, setIsComplete] = useState<boolean>(false);
   const [summary, setSummary] = useState<StructuredSummary | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string>('');
+  const submitInFlight = useRef(false);
 
   const handleNextTurn = async (responseVal?: string) => {
     const textToSubmit = responseVal || answer;
-    if (!textToSubmit.trim() || !session || submitLoading || skipLoading) return;
+    if (!textToSubmit.trim() || !session || submitInFlight.current) return;
 
     const isSkip = textToSubmit === '[Skipped by patient]';
+    submitInFlight.current = true;
     setSubmitLoading(!isSkip);
     setSkipLoading(isSkip);
+
     try {
+      setErrorMsg('');
       const res = await submitTurn(session.id, textToSubmit, currentQuestion);
       setAnswer('');
 
@@ -47,7 +52,9 @@ export const PatientInterviewPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Turn submission error:', err);
+      setErrorMsg('Something went wrong. Please try again. / Kuch gadbad ho gayi, dobara try karein.');
     } finally {
+      submitInFlight.current = false;
       setSubmitLoading(false);
       setSkipLoading(false);
     }
@@ -108,6 +115,14 @@ export const PatientInterviewPage: React.FC = () => {
                     {opt}
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* Error Message */}
+            {errorMsg && (
+              <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-2xl text-lg font-medium">
+                <AlertCircle className="w-6 h-6 flex-shrink-0" />
+                <span>{errorMsg}</span>
               </div>
             )}
 

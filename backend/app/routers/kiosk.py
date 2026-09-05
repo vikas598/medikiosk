@@ -7,10 +7,11 @@ from datetime import datetime
 
 from app.adapters.llm import call_llm_json
 from app.schema import TurnRequest, ConsentRequest
+from app.services.interview import process_turn
 
 router = APIRouter(prefix="/kiosk", tags=["kiosk"])
 INTERVIEW_SYSTEM_PROMPT = (
-    Path(__file__).resolve().parents[2] / "prompts" / "interview.txt"
+    Path(__file__).resolve().parents[1] / "prompts" / "interview.txt"
 ).read_text(encoding="utf-8")
 
 # Get session by token
@@ -40,47 +41,52 @@ def record_consent(session_id: str, req: ConsentRequest):
     
     return {"status": "ok"}
 
-def get_next_question(turns: list[dict]) -> dict:
-    """Generate the next interview turn from the stored transcript."""
-    try:
-        result = call_llm_json(
-            system_prompt=INTERVIEW_SYSTEM_PROMPT,
-            user_message=json.dumps(turns, ensure_ascii=False),
-        )
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail="Interview AI is unavailable") from exc
+# def get_next_question(turns: list[dict]) -> dict:
+#     """Generate the next interview turn from the stored transcript."""
+#     try:
+#         result = call_llm_json(
+#             system_prompt=INTERVIEW_SYSTEM_PROMPT,
+#             user_message=json.dumps(turns, ensure_ascii=False),
+#         )
+#     except Exception as exc:
+#         raise HTTPException(status_code=502, detail="Interview AI is unavailable") from exc
 
-    if not isinstance(result.get("question"), (str, type(None))):
-        raise HTTPException(status_code=502, detail="Interview AI returned invalid question data")
+#     if not isinstance(result.get("question"), (str, type(None))):
+#         raise HTTPException(status_code=502, detail="Interview AI returned invalid question data")
 
-    return {
-        "question": result.get("question"),
-        "touch_options": result.get("touch_options", []),
-        "is_complete": bool(result.get("is_complete", False)),
-    }
+#     return {
+#         "question": result.get("question"),
+#         "touch_options": result.get("touch_options", []),
+#         "is_complete": bool(result.get("is_complete", False)),
+#     }
+
+# @router.post("/sessions/{session_id}/interview/turn")
+# def interview_turn(session_id: str, req: TurnRequest):
+#     # Fetch transcript
+#     result = supabase.table("transcripts").select("*").eq("session_id", session_id).execute()
+
+#     turns = result.data[0]["turns"] if result.data else []
+#     turns.append({
+#         "q": req.question or "",
+#         "a": req.response,
+#         "timestamp": datetime.now().isoformat(),
+#     })
+
+#     if not result.data:
+#         supabase.table("transcripts").insert({
+#             "session_id": session_id,
+#             "turns": turns,
+#         }).execute()
+#         supabase.table("intake_sessions").update({"state": "interviewing"}).eq("id", session_id).execute()
+#     else:
+#         supabase.table("transcripts").update({"turns": turns}).eq("session_id", session_id).execute()
+
+#     return get_next_question(turns)
 
 @router.post("/sessions/{session_id}/interview/turn")
 def interview_turn(session_id: str, req: TurnRequest):
-    # Fetch transcript
-    result = supabase.table("transcripts").select("*").eq("session_id", session_id).execute()
+    return process_turn(session_id, req.response)
 
-    turns = result.data[0]["turns"] if result.data else []
-    turns.append({
-        "q": req.question or "",
-        "a": req.response,
-        "timestamp": datetime.now().isoformat(),
-    })
-
-    if not result.data:
-        supabase.table("transcripts").insert({
-            "session_id": session_id,
-            "turns": turns,
-        }).execute()
-        supabase.table("intake_sessions").update({"state": "interviewing"}).eq("id", session_id).execute()
-    else:
-        supabase.table("transcripts").update({"turns": turns}).eq("session_id", session_id).execute()
-
-    return get_next_question(turns)
 
 # Finalize — generate hardcoded summary
 @router.post("/sessions/{session_id}/finalize")
@@ -95,11 +101,11 @@ def finalize(session_id: str):
         "personal_history": "Non-smoker, occasional alcohol",
         "ros": "No fever, no dyspnea, no palpitations"
     }
-    supabase.table("summaries").insert({
+    supabase.table("summaries").upsert({
         "session_id": session_id,
         "structured": hardcoded_summary,
         "status": "draft"
-    }).execute()
+    }, on_conflict="session_id").execute()
     supabase.table("intake_sessions").update({"state": "summary_ready"}).eq("id", session_id).execute()
     return {"status": "ok", "summary": hardcoded_summary}
 
