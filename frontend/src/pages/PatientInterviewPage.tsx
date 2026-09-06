@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { HelpCircle, Send, CheckCircle2, Loader2, ArrowRight, FileUp, FileText, AlertCircle, Mic, MicOff } from 'lucide-react';
 import { submitTurn, finalizeSession, transcribeAudio } from '../lib/api';
@@ -33,10 +33,43 @@ export const PatientInterviewPage: React.FC = () => {
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const submitInFlight = useRef(false);
 
+  const requestMicrophoneAccess = async () => {
+    if (!window.isSecureContext) {
+      setErrorMsg('Microphone requires HTTPS or localhost. / Mic ke liye HTTPS ya localhost zaroori hai.');
+      return null;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setErrorMsg('This browser does not support microphone access. / Yeh browser mic support nahi karta.');
+      return null;
+    }
+
+    try {
+      return await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      console.error('Mic access error:', err);
+      const errorName = err instanceof DOMException ? err.name : '';
+      setErrorMsg(
+        errorName === 'NotAllowedError'
+          ? 'Microphone is blocked for this site. Open browser site settings, allow Microphone, then reload. / Is site ke liye mic blocked hai; site settings mein Microphone allow karke reload karein.'
+          : 'No microphone was found or it is unavailable. / Mic nahi mila ya available nahi hai.'
+      );
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    if (window.isSecureContext && navigator.mediaDevices?.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then((stream) => stream.getTracks().forEach((track) => track.stop()))
+        .catch((err) => console.error('Mic permission error:', err));
+    }
+  }, []);
+
   const startRecording = async () => {
     try {
       setErrorMsg('');
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await requestMicrophoneAccess();
+      if (!stream) return;
       const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
@@ -78,8 +111,8 @@ export const PatientInterviewPage: React.FC = () => {
         }
       }, 30000);
     } catch (err) {
-      console.error('Mic access error:', err);
-      setErrorMsg('Microphone access denied. Please allow mic permission. / Mic ki permission dein.');
+      console.error('Recording error:', err);
+      setErrorMsg('Voice input could not start. Please type your answer. / Voice input shuru nahi hua, type karein.');
     }
   };
 

@@ -115,7 +115,7 @@ def update_summary(session_id: str, req: UpdateSummaryRequest):
 
     summary_row = summary_result.data[0]
     current_structured = summary_row.get("structured") or {}
-    updated_structured = req.structured.model_dump()
+    updated_structured = req.structured
     doctor_edits = {
         key: {"before": current_structured.get(key), "after": value}
         for key, value in updated_structured.items()

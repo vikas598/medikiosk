@@ -134,7 +134,7 @@ export const DoctorSessionDetailPage: React.FC = () => {
     );
   }
 
-  if (error || !session) {
+  if (!session) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-8 max-w-xl w-full">
@@ -193,6 +193,12 @@ export const DoctorSessionDetailPage: React.FC = () => {
           </span>
         </div>
       </div>
+
+      {error ? (
+        <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 font-medium text-red-700">
+          {error}
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.9fr] gap-6 mt-8">
         <section id="summary" className="bg-white rounded-[2rem] shadow-xl border-2 border-teal-200 p-6 scroll-mt-8">
