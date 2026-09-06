@@ -245,7 +245,7 @@ class SessionDetailResponse(BaseModel):
 
 class UpdateSummaryRequest(BaseModel):
     """Doctor's edits to the summary. Send the full updated structured summary."""
-    structured: StructuredSummary                 # complete updated summary
+    structured: dict                               # the summary format currently stored by the kiosk
 
 
 class UpdateSummaryResponse(BaseModel):

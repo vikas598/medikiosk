@@ -1,13 +1,15 @@
 import json
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from app.db import supabase
 from datetime import datetime
 
 from app.adapters.llm import call_llm_json
+from app.adapters.deepgram import transcribe_audio
 from app.schema import TurnRequest, ConsentRequest
 from app.services.interview import process_turn
+from app.services.summary import generate_summary
 
 router = APIRouter(prefix="/kiosk", tags=["kiosk"])
 INTERVIEW_SYSTEM_PROMPT = (
@@ -88,26 +90,31 @@ def interview_turn(session_id: str, req: TurnRequest):
     return process_turn(session_id, req.response)
 
 
-# Finalize — generate hardcoded summary
+# Transcribe patient audio to text
+@router.post("/sessions/{session_id}/transcribe")
+def transcribe(session_id: str, audio: UploadFile = File(...)):
+    audio_bytes = audio.file.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="No audio data received")
+    try:
+        text = transcribe_audio(audio_bytes, audio.content_type or "audio/webm")
+    except Exception as e:
+        print(f"  WARNING — Transcription failed ({type(e).__name__}: {e})")
+        raise HTTPException(status_code=502, detail="Transcription failed. Please try again.")
+    return {"text": text}
+
+
+# Finalize — generate AI summary from transcript
 @router.post("/sessions/{session_id}/finalize")
 def finalize(session_id: str):
-    hardcoded_summary = {
-        "chief_complaint": "Chest pain for 2 days",
-        "hpi": "Patient reports intermittent chest pain, 6/10 severity, no radiation",
-        "pmh": "No significant past medical history",
-        "drug_history": "None",
-        "allergy_history": "NKDA",
-        "family_history": "Father — hypertension",
-        "personal_history": "Non-smoker, occasional alcohol",
-        "ros": "No fever, no dyspnea, no palpitations"
-    }
+    summary = generate_summary(session_id)
     supabase.table("summaries").upsert({
         "session_id": session_id,
-        "structured": hardcoded_summary,
+        "structured": summary,
         "status": "draft"
     }, on_conflict="session_id").execute()
     supabase.table("intake_sessions").update({"state": "summary_ready"}).eq("id", session_id).execute()
-    return {"status": "ok", "summary": hardcoded_summary}
+    return {"status": "ok", "summary": summary}
 
 # In-memory store for handoffs (since we might not have a handoffs table)
 HANDOFFS_DB = {}

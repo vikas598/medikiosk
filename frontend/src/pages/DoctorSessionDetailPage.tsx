@@ -13,7 +13,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { approveDoctorSession, getDoctorSessionDetail, updateDoctorSummary } from '../lib/api';
-import type { DoctorDocument, DoctorSessionDetailResponse, StructuredSummary } from '../lib/types';
+import type { DoctorDocument, DoctorSessionDetailResponse, StructuredSummary, SummaryPoint } from '../lib/types';
 
 const formatTimestamp = (value?: string | null) => {
   if (!value) return 'Unknown time';
@@ -39,7 +39,8 @@ export const DoctorSessionDetailPage: React.FC = () => {
   const [approving, setApproving] = useState(false);
   const [editingSummary, setEditingSummary] = useState(false);
   const [savingSummary, setSavingSummary] = useState(false);
-  const [draftSummary, setDraftSummary] = useState<Record<string, string>>({});
+  const [draftPoints, setDraftPoints] = useState<SummaryPoint[]>([]);
+  const [draftRedFlags, setDraftRedFlags] = useState<string>('');
 
   useEffect(() => {
     if (!sessionId) {
@@ -81,11 +82,8 @@ export const DoctorSessionDetailPage: React.FC = () => {
 
   const startEditingSummary = () => {
     if (!session?.summary) return;
-    setDraftSummary(
-      Object.fromEntries(
-        Object.entries(session.summary).map(([key, value]) => [key, formatSummaryValue(value)]),
-      ),
-    );
+    setDraftPoints(session.summary.points.map((p) => ({ en: p.en, hi: p.hi })));
+    setDraftRedFlags(session.summary.red_flags.join('\n'));
     setError(null);
     setEditingSummary(true);
   };
@@ -94,17 +92,8 @@ export const DoctorSessionDetailPage: React.FC = () => {
     if (!sessionId || !session?.summary || savingSummary) return;
 
     const structured: StructuredSummary = {
-      chief_complaint: draftSummary.chief_complaint || '',
-      hpi: draftSummary.hpi || '',
-      pmh: draftSummary.pmh || 'Not assessed',
-      psh: draftSummary.psh || 'Not assessed',
-      drug_history: draftSummary.drug_history || 'Not assessed',
-      allergy_history: draftSummary.allergy_history || 'NKDA',
-      family_history: draftSummary.family_history || 'Not assessed',
-      personal_history: draftSummary.personal_history || 'Not assessed',
-      ros: draftSummary.ros || 'Not assessed',
-      red_flags_noted: (draftSummary.red_flags_noted || '').split(/\r?\n/).map((flag) => flag.trim()).filter(Boolean),
-      clinical_impression: draftSummary.clinical_impression || 'Not assessed',
+      points: draftPoints.filter((p) => p.en.trim() || p.hi.trim()),
+      red_flags: draftRedFlags.split(/\r?\n/).map((f) => f.trim()).filter(Boolean),
     };
 
     setSavingSummary(true);
@@ -145,7 +134,7 @@ export const DoctorSessionDetailPage: React.FC = () => {
     );
   }
 
-  if (error || !session) {
+  if (!session) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-8 max-w-xl w-full">
@@ -166,11 +155,9 @@ export const DoctorSessionDetailPage: React.FC = () => {
   const transcriptTurns = session.transcript?.turns || [];
   const uploadedDocs = session.documents || [];
   const isReadyForApproval = session.state === 'summary_ready';
-  const summaryEntries = session.summary
-    ? Object.entries(session.summary).filter(([, value]) => value !== null && value !== undefined && value !== '')
-    : [];
-  const summaryFlags = Array.isArray(session.summary?.red_flags_noted)
-    ? session.summary.red_flags_noted.filter((flag): flag is string => typeof flag === 'string' && flag.trim().length > 0)
+  const summaryPoints = session.summary?.points || [];
+  const summaryFlags = Array.isArray(session.summary?.red_flags)
+    ? session.summary.red_flags.filter((flag): flag is string => typeof flag === 'string' && flag.trim().length > 0)
     : [];
   const flagReadings = [
     ...(session.priority_flag
@@ -207,6 +194,12 @@ export const DoctorSessionDetailPage: React.FC = () => {
         </div>
       </div>
 
+      {error ? (
+        <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 font-medium text-red-700">
+          {error}
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.9fr] gap-6 mt-8">
         <section id="summary" className="bg-white rounded-[2rem] shadow-xl border-2 border-teal-200 p-6 scroll-mt-8">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4 mb-5">
@@ -224,18 +217,39 @@ export const DoctorSessionDetailPage: React.FC = () => {
 
           {editingSummary ? (
             <div className="space-y-4">
-              {Object.entries(draftSummary).map(([key, value]) => (
-                <label key={key} className={key === 'hpi' || key === 'clinical_impression' ? 'block md:col-span-2' : 'block'}>
-                  <span className="text-xs font-black uppercase tracking-wide text-slate-500">{formatLabel(key)}</span>
-                  <textarea
-                    rows={key === 'hpi' || key === 'clinical_impression' ? 4 : 2}
-                    value={value}
-                    onChange={(event) => setDraftSummary((current) => ({ ...current, [key]: event.target.value }))}
-                    className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 p-3 text-slate-800 outline-none focus:border-teal-500"
-                  />
-                  {key === 'red_flags_noted' ? <span className="text-xs text-slate-500">Enter one flag per line.</span> : null}
-                </label>
+              {draftPoints.map((point, i) => (
+                <div key={i} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                  <span className="text-xs font-black uppercase tracking-wide text-slate-500">Point {i + 1}</span>
+                  <label className="block">
+                    <span className="text-xs font-bold text-teal-700">English (Clinical)</span>
+                    <textarea
+                      rows={2}
+                      value={point.en}
+                      onChange={(e) => setDraftPoints((pts) => pts.map((p, idx) => idx === i ? { ...p, en: e.target.value } : p))}
+                      className="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 text-slate-800 outline-none focus:border-teal-500"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-xs font-bold text-slate-500">Hinglish</span>
+                    <textarea
+                      rows={2}
+                      value={point.hi}
+                      onChange={(e) => setDraftPoints((pts) => pts.map((p, idx) => idx === i ? { ...p, hi: e.target.value } : p))}
+                      className="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 text-slate-800 outline-none focus:border-teal-500"
+                    />
+                  </label>
+                </div>
               ))}
+              <label className="block">
+                <span className="text-xs font-black uppercase tracking-wide text-slate-500">Red Flags</span>
+                <textarea
+                  rows={2}
+                  value={draftRedFlags}
+                  onChange={(e) => setDraftRedFlags(e.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 p-3 text-slate-800 outline-none focus:border-teal-500"
+                />
+                <span className="text-xs text-slate-500">Enter one flag per line. Leave empty if none.</span>
+              </label>
               <div className="flex flex-wrap justify-end gap-3">
                 <button type="button" onClick={() => setEditingSummary(false)} disabled={savingSummary} className="rounded-2xl border border-slate-300 px-5 py-3 font-bold text-slate-700">
                   Cancel
@@ -246,14 +260,27 @@ export const DoctorSessionDetailPage: React.FC = () => {
                 </button>
               </div>
             </div>
-          ) : summaryEntries.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {summaryEntries.map(([key, value]) => (
-                <div key={key} className={key === 'hpi' || key === 'clinical_impression' ? 'md:col-span-2 rounded-2xl bg-teal-50 border border-teal-100 p-4' : 'rounded-2xl bg-slate-50 border border-slate-200 p-4'}>
-                  <dt className="text-xs font-black uppercase tracking-wide text-slate-500">{formatLabel(key)}</dt>
-                  <dd className="mt-2 text-slate-800 whitespace-pre-wrap leading-relaxed">{formatSummaryValue(value)}</dd>
+          ) : summaryPoints.length > 0 ? (
+            <div className="space-y-4">
+              {summaryPoints.map((point, i) => (
+                <div key={i} className="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                  <p className="text-lg font-semibold text-[#0C3B4A]">{point.en}</p>
+                  <p className="text-base text-slate-500 mt-1">{point.hi}</p>
                 </div>
               ))}
+              {summaryFlags.length > 0 && (
+                <div className="rounded-2xl bg-red-50 border border-red-200 p-4">
+                  <p className="font-bold text-red-700 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5" />
+                    Red Flags
+                  </p>
+                  <ul className="mt-2 space-y-1">
+                    {summaryFlags.map((flag, i) => (
+                      <li key={i} className="text-red-600 text-lg">• {flag}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-slate-600">
