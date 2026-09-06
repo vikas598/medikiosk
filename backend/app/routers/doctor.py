@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from app.db import supabase
 from app.schema import ApproveRequest, UpdateSummaryRequest
 
@@ -19,13 +19,26 @@ def _extract_patient(session_row):
 
 
 @router.get("/queue")
-def get_queue():
-    result = supabase.table("intake_sessions").select("*, patients(*), summaries(*)").order("priority_flag", desc=True).order("started_at").execute()
+def get_queue(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+):
+    start = (page - 1) * page_size
+    end = start + page_size - 1
+    result = (
+        supabase.table("intake_sessions")
+        .select("*, patients(*), summaries(*)", count="exact")
+        .not_.is_("state", "null")
+        .neq("state", "expired")
+        .order("priority_flag", desc=True)
+        .order("started_at", desc=True)
+        .range(start, end)
+        .execute()
+    )
     rows = result.data or []
-    active_rows = [row for row in rows if row.get("state") not in (None, "expired")]
     patients = []
 
-    for row in active_rows:
+    for row in rows:
         summary = row.get("summaries") or []
         if isinstance(summary, list):
             summary_row = summary[0] if summary else None
@@ -44,7 +57,15 @@ def get_queue():
             "summary_status": (summary_row or {}).get("status") if summary_row else None,
         })
 
-    return {"patients": patients, "total_count": len(patients)}
+    total_count = result.count or 0
+    total_pages = (total_count + page_size - 1) // page_size
+    return {
+        "patients": patients,
+        "total_count": total_count,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+    }
 
 
 @router.get("/sessions/{session_id}")

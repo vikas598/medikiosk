@@ -208,6 +208,9 @@ class QueueResponse(BaseModel):
     """The doctor's department queue. Red-flagged patients first, then by time."""
     patients: list[QueuePatient] = []
     total_count: int = 0
+    page: int = 1
+    page_size: int = 20
+    total_pages: int = 0
 
 
 # --- GET /doctor/sessions/{id} ---

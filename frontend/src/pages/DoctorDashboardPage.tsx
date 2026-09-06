@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Stethoscope, Users, LogOut, Clock3, AlertTriangle, Loader2, RefreshCw, FileText } from 'lucide-react';
+import { Stethoscope, Users, LogOut, Clock3, AlertTriangle, Loader2, RefreshCw, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { authService } from '../lib/authService';
 import { getDoctorQueue } from '../lib/api';
 import type { DoctorQueueItem } from '../lib/types';
@@ -16,6 +16,7 @@ const stateStyles: Record<string, string> = {
 };
 
 const formatStateLabel = (state: string) => state.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+const QUEUE_PAGE_SIZE = 20;
 
 export const DoctorDashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,9 @@ export const DoctorDashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   const loadQueue = useCallback(async (manual = false, background = false) => {
     if (manual) {
@@ -34,15 +38,17 @@ export const DoctorDashboardPage: React.FC = () => {
     setError(null);
 
     try {
-      const response = await getDoctorQueue();
+      const response = await getDoctorQueue(page, QUEUE_PAGE_SIZE);
       setPatients(response?.patients || []);
+      setTotalPages(Math.max(response?.total_pages || 1, 1));
+      setTotalCount(response?.total_count || 0);
     } catch (err: any) {
       setError(err?.message || 'Unable to load the patient queue right now.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [page]);
 
   useEffect(() => {
     void loadQueue(false);
@@ -97,7 +103,7 @@ export const DoctorDashboardPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <div className="bg-teal-50 border border-teal-300 text-teal-900 px-5 py-2.5 rounded-2xl font-bold text-lg flex items-center gap-2">
               <Users className="w-6 h-6 text-teal-600" />
-              <span>{patients.length} Patients</span>
+              <span>{totalCount} Patients</span>
             </div>
             <button
               type="button"
@@ -181,6 +187,32 @@ export const DoctorDashboardPage: React.FC = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {!loading && !error && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 border-t border-slate-200 pt-5">
+            <button
+              type="button"
+              onClick={() => setPage((currentPage) => currentPage - 1)}
+              disabled={page === 1 || refreshing}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-slate-100 px-5 py-2.5 font-bold text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              Previous
+            </button>
+            <span className="font-bold text-slate-600">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((currentPage) => currentPage + 1)}
+              disabled={page >= totalPages || refreshing}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-slate-100 px-5 py-2.5 font-bold text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+              <ChevronRight className="h-5 w-5" />
+            </button>
           </div>
         )}
       </div>

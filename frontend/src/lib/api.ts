@@ -1,4 +1,4 @@
-import type { SessionResponse, TurnResponse, FinalizeResponse, StructuredSummary } from './types';
+import type { SessionResponse, TurnResponse, FinalizeResponse, StructuredSummary, DoctorQueueResponse } from './types';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -101,8 +101,10 @@ export const finalizeSession = async (sessionId: string): Promise<FinalizeRespon
   return res.data;
 };
 
-export const getDoctorQueue = async () => {
-  const res = await api.get('/doctor/queue');
+export const getDoctorQueue = async (page = 1, pageSize = 20) => {
+  const res = await api.get<DoctorQueueResponse>('/doctor/queue', {
+    params: { page, page_size: pageSize },
+  });
   return res.data;
 };
 

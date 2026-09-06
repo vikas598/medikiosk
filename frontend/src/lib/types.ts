@@ -54,6 +54,9 @@ export interface DoctorQueueItem {
 export interface DoctorQueueResponse {
   patients: DoctorQueueItem[];
   total_count: number;
+  page?: number;
+  page_size?: number;
+  total_pages?: number;
 }
 
 export interface TranscriptTurn {
