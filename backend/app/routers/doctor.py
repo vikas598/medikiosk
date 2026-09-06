@@ -18,13 +18,30 @@ def _extract_patient(session_row):
     }
 
 
+def _signed_url(storage_path):
+    if not storage_path:
+        return None
+    try:
+        result = supabase.storage.from_("medical-documents").create_signed_url(storage_path, 3600)
+        if isinstance(result, dict):
+            signed_url = result.get("signedURL") or result.get("signed_url") or result.get("url")
+            if isinstance(signed_url, dict):
+                signed_url = signed_url.get("url") or signed_url.get("signedURL")
+            if not signed_url and isinstance(result.get("data"), dict):
+                signed_url = result["data"].get("signedURL") or result["data"].get("signed_url") or result["data"].get("url")
+            return signed_url
+        if isinstance(result, list) and result and isinstance(result[0], dict):
+            return result[0].get("signedURL") or result[0].get("signed_url") or result[0].get("url")
+    except Exception:
+        return None
+    return None
+
+
 @router.get("/queue")
 def get_queue(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
-    start = (page - 1) * page_size
-    end = start + page_size - 1
     result = (
         supabase.table("intake_sessions")
         .select("*, patients(*), summaries(*)", count="exact")
@@ -32,13 +49,35 @@ def get_queue(
         .neq("state", "expired")
         .order("priority_flag", desc=True)
         .order("started_at", desc=True)
-        .range(start, end)
         .execute()
     )
     rows = result.data or []
+    rows_by_patient = {}
+    for row in rows:
+        patient = _extract_patient(row)
+        patient_id = patient.get("id") or row.get("patient_id") or row.get("id")
+        rows_by_patient.setdefault(patient_id, []).append(row)
+
+    unique_rows = []
+    for patient_rows in rows_by_patient.values():
+        latest = patient_rows[0]
+        flagged_row = next((row for row in patient_rows if row.get("priority_flag")), None)
+        if flagged_row:
+            latest = {
+                **latest,
+                "priority_flag": True,
+                "priority_reason": flagged_row.get("priority_reason") or latest.get("priority_reason"),
+            }
+        unique_rows.append(latest)
+    unique_rows.sort(key=lambda row: row.get("started_at") or "", reverse=True)
+    unique_rows.sort(key=lambda row: bool(row.get("priority_flag", False)), reverse=True)
+
+    total_count = len(unique_rows)
+    start = (page - 1) * page_size
+    page_rows = unique_rows[start:start + page_size]
     patients = []
 
-    for row in rows:
+    for row in page_rows:
         summary = row.get("summaries") or []
         if isinstance(summary, list):
             summary_row = summary[0] if summary else None
@@ -57,7 +96,6 @@ def get_queue(
             "summary_status": (summary_row or {}).get("status") if summary_row else None,
         })
 
-    total_count = result.count or 0
     total_pages = (total_count + page_size - 1) // page_size
     return {
         "patients": patients,
@@ -75,6 +113,39 @@ def get_session_detail(session_id: str):
         raise HTTPException(status_code=404)
 
     session_row = session.data[0]
+    patient = _extract_patient(session_row)
+    patient_id = patient.get("id") or session_row.get("patient_id")
+    history_query = (
+        supabase.table("intake_sessions")
+        .select("*, patients(*)")
+        .eq("patient_id", patient_id)
+        .order("started_at", desc=True)
+        .execute()
+    )
+    history_rows = history_query.data or [session_row]
+    history_session_ids = [row.get("id") for row in history_rows if row.get("id")]
+    history_summaries = (
+        supabase.table("summaries")
+        .select("*")
+        .in_("session_id", history_session_ids)
+        .execute()
+        if history_session_ids
+        else None
+    )
+    summaries_by_session = {
+        row.get("session_id"): row
+        for row in (history_summaries.data if history_summaries else [])
+    }
+    history_documents = (
+        supabase.table("documents")
+        .select("*")
+        .in_("session_id", history_session_ids)
+        .order("created_at", desc=True)
+        .execute()
+        if history_session_ids
+        else None
+    )
+    token_by_session = {row.get("id"): row.get("token") for row in history_rows}
     transcript = supabase.table("transcripts").select("*").eq("session_id", session_id).execute()
     summary = supabase.table("summaries").select("*").eq("session_id", session_id).execute()
     documents_query = supabase.table("documents").select("*").eq("session_id", session_id).order("created_at", desc=True).execute()
@@ -86,33 +157,48 @@ def get_session_detail(session_id: str):
         summary_data = summary_row
     documents = []
     for doc in documents_query.data or []:
-        signed_url = None
         storage_path = doc.get("storage_path")
-        if storage_path:
-            try:
-                result = supabase.storage.from_("medical-documents").create_signed_url(storage_path, 3600)
-                if isinstance(result, dict):
-                    signed_url = result.get("signedURL") or result.get("signed_url") or result.get("url")
-                    if isinstance(signed_url, dict):
-                        signed_url = signed_url.get("url") or signed_url.get("signedURL")
-                    if not signed_url and isinstance(result.get("data"), dict):
-                        signed_url = result["data"].get("signedURL") or result["data"].get("signed_url") or result["data"].get("url")
-                elif isinstance(result, list) and result:
-                    first = result[0]
-                    if isinstance(first, dict):
-                        signed_url = first.get("signedURL") or first.get("signed_url") or first.get("url")
-            except Exception:
-                signed_url = None
-
         documents.append({
             "id": doc.get("id"),
             "session_id": doc.get("session_id"),
+            "token": session_row.get("token"),
             "filename": doc.get("filename"),
             "file_type": doc.get("file_type"),
             "storage_path": storage_path,
             "size": doc.get("size"),
             "uploaded_at": doc.get("uploaded_at") or doc.get("created_at"),
-            "url": signed_url,
+            "url": _signed_url(storage_path),
+        })
+
+    previous_summaries = []
+    all_documents = list(documents)
+    for history_row in history_rows:
+        history_session_id = history_row.get("id")
+        if history_session_id == session_id:
+            continue
+        history_summary = summaries_by_session.get(history_session_id)
+        if history_summary:
+            previous_summaries.append({
+                "session_id": history_session_id,
+                "token": history_row.get("token"),
+                "started_at": history_row.get("started_at"),
+                "summary": history_summary.get("structured") or history_summary,
+                "status": history_summary.get("status"),
+            })
+    for doc in (history_documents.data if history_documents else []):
+        history_session_id = doc.get("session_id")
+        if history_session_id == session_id:
+            continue
+        all_documents.append({
+            "id": doc.get("id"),
+            "session_id": history_session_id,
+            "token": token_by_session.get(history_session_id),
+            "filename": doc.get("filename"),
+            "file_type": doc.get("file_type"),
+            "storage_path": doc.get("storage_path"),
+            "size": doc.get("size"),
+            "uploaded_at": doc.get("uploaded_at") or doc.get("created_at"),
+            "url": _signed_url(doc.get("storage_path")),
         })
 
     return {
@@ -121,10 +207,12 @@ def get_session_detail(session_id: str):
         "state": session_row.get("state"),
         "priority_flag": bool(session_row.get("priority_flag", False)),
         "priority_reason": session_row.get("priority_reason"),
-        "patient": _extract_patient(session_row),
+        "patient": patient,
         "transcript": transcript_data,
         "summary": summary_data,
-        "documents": documents,
+        "documents": all_documents,
+        "previous_summaries": previous_summaries,
+        "patient_id": patient_id,
     }
 
 

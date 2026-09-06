@@ -75,6 +75,15 @@ export interface DoctorDocument {
   size: number | null;
   uploaded_at: string | null;
   url?: string | null;
+  token?: string | null;
+}
+
+export interface PreviousSummary {
+  session_id: string;
+  token: string;
+  started_at: string;
+  summary: StructuredSummary;
+  status?: string | null;
 }
 
 export interface DoctorSessionDetailResponse {
@@ -89,6 +98,8 @@ export interface DoctorSessionDetailResponse {
   } | null;
   summary: StructuredSummary | null;
   documents: DoctorDocument[];
+  patient_id: string;
+  previous_summaries: PreviousSummary[];
 }
 
 export interface DoctorApprovalResponse {

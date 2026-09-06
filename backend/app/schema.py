@@ -234,6 +234,7 @@ class SessionDetailResponse(BaseModel):
     """Full detail view for one patient — everything the doctor needs.
     This is the response when doctor clicks a patient in the queue."""
     session_id: str
+    patient_id: str = ""
     token: str
     state: SessionState
     priority_flag: bool = False
@@ -242,6 +243,7 @@ class SessionDetailResponse(BaseModel):
     transcript: TranscriptResponse                # full Q&A conversation
     summary: Optional[SummaryResponse] = None     # null if not yet generated
     red_flags: list[RedFlag] = []                 # all detected red flags
+    previous_summaries: list[dict] = []                 # all detected red flags
 
 
 # --- PATCH /doctor/sessions/{id}/summary ---

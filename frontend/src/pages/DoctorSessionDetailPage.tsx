@@ -154,6 +154,7 @@ export const DoctorSessionDetailPage: React.FC = () => {
 
   const transcriptTurns = session.transcript?.turns || [];
   const uploadedDocs = session.documents || [];
+  const previousSummaries = session.previous_summaries || [];
   const isReadyForApproval = session.state === 'summary_ready';
   const summaryPoints = session.summary?.points || [];
   const summaryFlags = Array.isArray(session.summary?.red_flags)
@@ -179,8 +180,9 @@ export const DoctorSessionDetailPage: React.FC = () => {
             <span>Back to Queue</span>
           </button>
           <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-cyan-200">Patient Session</p>
+            <p className="text-sm uppercase tracking-[0.2em] text-cyan-200">Patient Record</p>
             <h1 className="text-3xl font-black">{session.patient.name || 'Unknown patient'}</h1>
+            <p className="text-sm text-cyan-100">Patient ID: {session.patient_id}</p>
           </div>
         </div>
 
@@ -366,7 +368,7 @@ export const DoctorSessionDetailPage: React.FC = () => {
                       <div>
                         <p className="font-bold text-[#0C3B4A]">{doc.filename || 'Medical document'}</p>
                         <p className="text-sm text-slate-600">
-                          {doc.file_type || 'Unknown type'} • {doc.size ? `${Math.round(doc.size / 1024)} KB` : 'Unknown size'}
+                          Token {doc.token || session.token} • {doc.file_type || 'Unknown type'} • {doc.size ? `${Math.round(doc.size / 1024)} KB` : 'Unknown size'}
                         </p>
                       </div>
                       <button
@@ -385,6 +387,36 @@ export const DoctorSessionDetailPage: React.FC = () => {
               <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-slate-600">
                 No uploaded document has been associated with this session yet.
               </div>
+            )}
+          </section>
+
+          <section className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-6">
+            <div className="flex items-center gap-3 border-b border-slate-200 pb-4 mb-4">
+              <Files className="w-6 h-6 text-[#0C3B4A]" />
+              <h2 className="text-2xl font-black text-[#0C3B4A]">Previous Summaries</h2>
+            </div>
+            {previousSummaries.length > 0 ? (
+              <div className="space-y-3">
+                {previousSummaries.map((previous) => (
+                  <details key={previous.session_id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <summary className="cursor-pointer font-bold text-[#0C3B4A]">
+                      Token {previous.token} · {formatTimestamp(previous.started_at)}
+                    </summary>
+                    <div className="mt-3 space-y-2">
+                      {previous.summary.points?.map((point, index) => (
+                        <div key={index}>
+                          <p className="font-semibold text-[#0C3B4A]">{point.en}</p>
+                          <p className="text-sm text-slate-500">{point.hi}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-slate-600">
+                No previous summaries for this patient.
+              </p>
             )}
           </section>
 
