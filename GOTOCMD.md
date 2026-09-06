@@ -49,7 +49,7 @@ After creating the patient, add them to the `intake_sessions` table:
 INSERT INTO intake_sessions (patient_id, token, state)
 SELECT id, '006', 'started'
 FROM patients
-WHERE name = 'Vikas'
+WHERE name = 'vikas'
 ORDER BY created_at DESC
 LIMIT 1;
 ```

@@ -9,6 +9,7 @@ SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
+TESSERACT_CMD = os.getenv("TESSERACT_CMD")
 DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
 LLM_MODEL = os.getenv("LLM_MODEL")
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0"))

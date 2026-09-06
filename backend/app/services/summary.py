@@ -1,6 +1,7 @@
 import json
 from app.adapters.llm import call_llm_json
 from app.db import supabase
+from app.services.document_extraction import extract_document_text
 
 with open("app/prompts/summary_demo.txt") as f:
     SUMMARY_SYSTEM_PROMPT = f.read()
@@ -8,7 +9,7 @@ with open("app/prompts/summary_demo.txt") as f:
 
 def generate_summary(session_id: str) -> dict:
     """Read transcript from DB, call LLM, return compressed summary."""
-    # Fetch the transcript
+    # Fetch the transcript and documents for this same intake session.
     result = supabase.table("transcripts").select("turns").eq("session_id", session_id).execute()
     if not result.data or not result.data[0].get("turns"):
         return _fallback_summary()
@@ -20,7 +21,29 @@ def generate_summary(session_id: str) -> dict:
     if not answered:
         return _fallback_summary()
 
-    user_message = json.dumps(answered, ensure_ascii=False)
+    documents_result = (
+        supabase.table("documents")
+        .select("filename, file_type, storage_path")
+        .eq("session_id", session_id)
+        .execute()
+    )
+    document_information = []
+    for document in documents_result.data or []:
+        storage_path = document.get("storage_path")
+        if not storage_path:
+            continue
+        try:
+            content = supabase.storage.from_("medical-documents").download(storage_path)
+            text = extract_document_text(content, document.get("file_type"), document.get("filename"))
+            if text:
+                document_information.append({"filename": document.get("filename"), "text": text})
+        except Exception as e:
+            print(f"  WARNING — Document extraction failed for {document.get('filename')}: {type(e).__name__}: {e}")
+
+    user_message = json.dumps({
+        "patient_interview_transcript": answered,
+        "medical_document_information": document_information or "No readable medical documents were uploaded.",
+    }, ensure_ascii=False)
 
     try:
         summary = call_llm_json(SUMMARY_SYSTEM_PROMPT, user_message)

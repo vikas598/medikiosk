@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File
 from app.db import supabase
 from app.schema import VerifyHandoffRequest, VerifyHandoffResponse
 from app.routers.kiosk import HANDOFFS_DB
+from app.services.summary import generate_summary
 import uuid
 
 router = APIRouter(prefix="/mobile", tags=["mobile"])
@@ -84,5 +85,16 @@ async def upload_document(handoff_token: str, file: UploadFile = File(...)):
     except Exception as e:
         print(f"Supabase documents table error: {e}")
         raise HTTPException(status_code=500, detail="Database table error. Ensure 'documents' table exists in Supabase.")
+
+    # Documents are uploaded after interview finalization, so refresh the existing
+    # session summary now that this document is available to the summary pipeline.
+    transcript = supabase.table("transcripts").select("turns").eq("session_id", session_id).execute()
+    if transcript.data and transcript.data[0].get("turns"):
+        summary = generate_summary(session_id)
+        supabase.table("summaries").upsert({
+            "session_id": session_id,
+            "structured": summary,
+            "status": "draft"
+        }, on_conflict="session_id").execute()
 
     return {"status": "ok", "message": "File uploaded successfully"}
