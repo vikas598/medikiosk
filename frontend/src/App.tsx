@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Header } from './components/Header';
 import { LandingPage } from './pages/LandingPage';
 import { DoctorAuthPage } from './pages/DoctorAuthPage';
@@ -10,10 +10,16 @@ import { DoctorSessionDetailPage } from './pages/DoctorSessionDetailPage';
 import { KioskDocumentUploadPage } from './pages/KioskDocumentUploadPage';
 import { MobileUploadPage } from './pages/MobileUploadPage';
 
-export default function App() {
+function AppContent() {
+  const location = useLocation();
+  const themeClass = location.pathname.startsWith('/patient')
+    ? 'patient-theme'
+    : location.pathname.startsWith('/doctor')
+      ? 'doctor-theme'
+      : '';
+
   return (
-    <Router>
-      <div className="min-h-screen flex flex-col bg-[#071822] text-slate-900 font-sans selection:bg-[#0D9488] selection:text-white">
+    <div className={`min-h-screen flex flex-col bg-[#071822] text-slate-900 font-sans selection:bg-[#0D9488] selection:text-white ${themeClass}`}>
         {/* Render Main Header except on standalone Mobile Upload route */}
         <Routes>
           <Route path="/mobile-upload/:token" element={null} />
@@ -35,7 +41,14 @@ export default function App() {
             <Route path="/mobile-upload/:token" element={<MobileUploadPage />} />
           </Routes>
         </main>
-      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }

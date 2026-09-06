@@ -68,6 +68,82 @@
   animation: question-enter 280ms ease-out both;
 }
 
+/* Keep the existing page geometry while giving each workflow its own visual language. */
+.patient-theme [class~="bg-white"] {
+  background-color: #effcf9 !important;
+}
+
+.patient-theme [class~="bg-slate-50"],
+.patient-theme [class~="bg-[#F8FAFC]"] {
+  background-color: #e2f8f3 !important;
+}
+
+.patient-theme [class~="bg-slate-100"],
+.patient-theme [class~="bg-slate-200"] {
+  background-color: #c9eee6 !important;
+}
+
+.patient-theme [class*="border-slate-"],
+.patient-theme [class*="border-white"] {
+  border-color: rgba(20, 148, 132, 0.28) !important;
+}
+
+.patient-theme [class*="text-[#0A1926]"],
+.patient-theme [class*="text-[#0C3B4A]"] {
+  color: #075b57 !important;
+}
+
+.patient-theme [class*="from-[#0D9488]"] {
+  --tw-gradient-from: #13bfa8 !important;
+  --tw-gradient-to: #079985 !important;
+}
+
+.patient-theme [class~="bg-[#0C3B4A]"] {
+  background-color: #075b57 !important;
+}
+
+.patient-theme [class~="bg-[#00C9A7]"] {
+  background-color: #13bfa8 !important;
+}
+
+.doctor-theme [class~="bg-white"] {
+  background-color: #eef5ff !important;
+}
+
+.doctor-theme [class~="bg-slate-50"],
+.doctor-theme [class~="bg-[#F8FAFC]"],
+.doctor-theme [class~="bg-[#F1F5F9]"] {
+  background-color: #e2edfc !important;
+}
+
+.doctor-theme [class~="bg-slate-100"],
+.doctor-theme [class~="bg-slate-200"] {
+  background-color: #cbdcf3 !important;
+}
+
+.doctor-theme [class*="border-slate-"],
+.doctor-theme [class*="border-white"] {
+  border-color: rgba(37, 104, 183, 0.28) !important;
+}
+
+.doctor-theme [class*="text-[#0A1926]"],
+.doctor-theme [class*="text-[#0C3B4A]"] {
+  color: #124b87 !important;
+}
+
+.doctor-theme [class*="from-[#0D9488]"] {
+  --tw-gradient-from: #167fe2 !important;
+  --tw-gradient-to: #095dbb !important;
+}
+
+.doctor-theme [class~="bg-[#0C3B4A]"] {
+  background-color: #124b87 !important;
+}
+
+.doctor-theme [class~="bg-[#00C9A7]"] {
+  background-color: #167fe2 !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .question-enter {
     animation: none;

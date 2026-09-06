@@ -176,7 +176,7 @@ export const PatientInterviewPage: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col justify-between items-center px-4 pb-6 max-w-4xl mx-auto w-full">
+    <div className="flex-1 flex flex-col justify-center items-center gap-4 px-4 pb-6 max-w-4xl mx-auto w-full">
       {/* Header Banner */}
       <div className="w-full bg-[#0C3B4A] text-white p-4 md:p-5 rounded-3xl shadow-xl flex items-center justify-between border-b-4 border-[#00C9A7]">
         <div className="flex items-center gap-4">
@@ -193,7 +193,7 @@ export const PatientInterviewPage: React.FC = () => {
       </div>
 
       {/* Main Card */}
-      <div className="kiosk-card w-full p-6 md:p-8 rounded-[2.5rem] shadow-2xl border-4 border-teal-500/20 bg-white my-4">
+      <div className="kiosk-card w-full p-6 md:p-8 rounded-[2.5rem] shadow-2xl border-4 border-teal-500/20 bg-white my-1">
         {!isComplete ? (
           <div className="space-y-8">
             <div className="space-y-3">
@@ -266,6 +266,13 @@ export const PatientInterviewPage: React.FC = () => {
                 rows={2}
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    void handleNextTurn();
+                  }
+                }}
+                aria-label="Interview answer"
                 placeholder="Type your answer or use the mic above to speak / Jawab likhen ya upar mic se bolein..."
                 className="w-full p-4 rounded-2xl border-2 border-slate-300 focus:border-[#00C9A7] text-xl font-medium text-slate-900 bg-slate-50 outline-none shadow-inner resize-none"
               />

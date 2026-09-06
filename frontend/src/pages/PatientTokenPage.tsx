@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, AlertTriangle, RefreshCw, Loader2 } from 'lucide-react';
 import { getSessionByToken } from '../lib/api';
@@ -11,6 +11,11 @@ export const PatientTokenPage: React.FC = () => {
   const [token, setToken] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [errorObj, setErrorObj] = useState<ApiErrorResponse | null>(null);
+  const tokenInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    tokenInputRef.current?.focus();
+  }, []);
 
   // Keypad Handlers
   const handleKeyPress = (key: string) => {
@@ -30,6 +35,20 @@ export const PatientTokenPage: React.FC = () => {
     setErrorObj(null);
   };
 
+  const handleTokenChange = (value: string) => {
+    const nextToken = value.replace(/\D/g, '').slice(0, 12);
+    setToken(nextToken);
+    setErrorObj(null);
+  };
+
+  const handleTokenKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      void handleSubmit();
+      return;
+    }
+  };
+
   // Submit Handler
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -42,8 +61,8 @@ export const PatientTokenPage: React.FC = () => {
       const session = await getSessionByToken(token);
       localStorage.setItem('niva_current_session', JSON.stringify(session));
       navigate('/patient/consent', { state: { session } });
-    } catch (err: any) {
-      if (err && err.type) {
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'type' in err) {
         setErrorObj(err as ApiErrorResponse);
       } else {
         setErrorObj({
@@ -55,25 +74,6 @@ export const PatientTokenPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Format token output with dashes if empty
-  const renderTokenDisplay = () => {
-    if (!token) {
-      return (
-        <div className="flex justify-center items-center gap-4 text-slate-300 font-mono text-3xl font-bold">
-          <span>-</span>
-          <span>-</span>
-          <span>-</span>
-          <span>-</span>
-        </div>
-      );
-    }
-    return (
-      <span className="font-mono text-3xl font-extrabold tracking-widest text-[#0A1926]">
-        {token}
-      </span>
-    );
   };
 
   return (
@@ -112,10 +112,33 @@ export const PatientTokenPage: React.FC = () => {
         )}
 
         {/* Token Input Box */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-[#F8FAFC] border border-slate-200 rounded-2xl py-5 px-6 flex justify-center items-center shadow-inner min-h-[72px]">
-            {renderTokenDisplay()}
-          </div>
+        <form
+          onSubmit={handleSubmit}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && event.target instanceof HTMLInputElement) {
+              event.preventDefault();
+              void handleSubmit();
+            }
+          }}
+          className="space-y-6"
+        >
+          <label className="bg-[#F8FAFC] border border-slate-200 rounded-2xl py-5 px-6 flex justify-center items-center shadow-inner min-h-[72px]">
+            <span className="sr-only">Patient token</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              autoComplete="one-time-code"
+              aria-label="Patient token"
+              ref={tokenInputRef}
+              value={token}
+              onChange={(event) => handleTokenChange(event.target.value)}
+              onKeyDown={handleTokenKeyDown}
+              placeholder="----"
+              maxLength={12}
+              className="w-full bg-transparent text-center font-mono text-3xl font-extrabold tracking-widest text-[#0A1926] placeholder:text-slate-300 outline-none"
+            />
+          </label>
 
           {/* On-Screen Keypad */}
           <OnScreenKeypad
