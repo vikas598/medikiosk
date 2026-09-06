@@ -24,18 +24,14 @@ export interface TurnResponse {
   is_complete: boolean;
 }
 
+export interface SummaryPoint {
+  en: string;
+  hi: string;
+}
+
 export interface StructuredSummary {
-  chief_complaint: string;
-  hpi: string;
-  pmh: string;
-  psh?: string;
-  drug_history: string;
-  allergy_history: string;
-  family_history: string;
-  personal_history: string;
-  ros: string;
-  red_flags_noted?: string[];
-  clinical_impression?: string;
+  points: SummaryPoint[];
+  red_flags: string[];
 }
 
 export interface FinalizeResponse {

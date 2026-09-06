@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { HelpCircle, Send, CheckCircle2, Loader2, ArrowRight, FileUp, FileText, AlertCircle } from 'lucide-react';
-import { submitTurn, finalizeSession } from '../lib/api';
+import { HelpCircle, Send, CheckCircle2, Loader2, ArrowRight, FileUp, FileText, AlertCircle, Mic, MicOff } from 'lucide-react';
+import { submitTurn, finalizeSession, transcribeAudio } from '../lib/api';
 import type { SessionResponse, StructuredSummary } from '../lib/types';
 
 export const PatientInterviewPage: React.FC = () => {
@@ -24,8 +24,75 @@ export const PatientInterviewPage: React.FC = () => {
   const [skipLoading, setSkipLoading] = useState<boolean>(false);
   const [isComplete, setIsComplete] = useState<boolean>(false);
   const [summary, setSummary] = useState<StructuredSummary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const submitInFlight = useRef(false);
+
+  const startRecording = async () => {
+    try {
+      setErrorMsg('');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        // Stop all mic tracks so the browser mic indicator turns off
+        stream.getTracks().forEach((track) => track.stop());
+
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        if (!session) return;
+
+        setIsTranscribing(true);
+        try {
+          const text = await transcribeAudio(session.id, audioBlob);
+          if (text.trim()) {
+            setAnswer((prev) => (prev ? prev + ' ' + text : text));
+          } else {
+            setErrorMsg('Could not hear anything. Please try again. / Kuch sunai nahi diya, dobara try karein.');
+          }
+        } catch (err) {
+          console.error('Transcription error:', err);
+          setErrorMsg('Voice transcription failed. Please type your answer. / Awaaz nahi samajh aaya, type karein.');
+        } finally {
+          setIsTranscribing(false);
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      // Auto-stop after 30 seconds
+      recordingTimerRef.current = setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop();
+          setIsRecording(false);
+        }
+      }, 30000);
+    } catch (err) {
+      console.error('Mic access error:', err);
+      setErrorMsg('Microphone access denied. Please allow mic permission. / Mic ki permission dein.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (recordingTimerRef.current) {
+      clearTimeout(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  };
 
   const handleNextTurn = async (responseVal?: string) => {
     const textToSubmit = responseVal || answer;
@@ -43,8 +110,13 @@ export const PatientInterviewPage: React.FC = () => {
 
       if (res.is_complete || !res.question) {
         setIsComplete(true);
-        const finalRes = await finalizeSession(session.id);
-        setSummary(finalRes.summary);
+        setSummaryLoading(true);
+        try {
+          const finalRes = await finalizeSession(session.id);
+          setSummary(finalRes.summary);
+        } finally {
+          setSummaryLoading(false);
+        }
       } else {
         setCurrentQuestion(res.question);
         setTouchOptions(res.touch_options || []);
@@ -109,7 +181,7 @@ export const PatientInterviewPage: React.FC = () => {
                     key={i}
                     type="button"
                     onClick={() => handleNextTurn(opt)}
-                    disabled={submitLoading || skipLoading}
+                    disabled={submitLoading || skipLoading || isRecording || isTranscribing}
                     className="py-4 px-8 rounded-2xl bg-teal-50 hover:bg-[#00C9A7] hover:text-slate-950 text-[#0C3B4A] font-bold text-xl border-2 border-teal-200 shadow-md transition-all active:scale-95 disabled:opacity-50"
                   >
                     {opt}
@@ -128,11 +200,40 @@ export const PatientInterviewPage: React.FC = () => {
 
             {/* Response Input */}
             <div className="space-y-4 pt-4">
+              {/* Mic Button */}
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={isRecording ? stopRecording : startRecording}
+                  disabled={submitLoading || skipLoading || isTranscribing}
+                  className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 disabled:opacity-50 ${
+                    isRecording
+                      ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                      : 'bg-[#0C3B4A] hover:bg-slate-700'
+                  }`}
+                >
+                  {isTranscribing ? (
+                    <Loader2 className="w-7 h-7 text-white animate-spin" />
+                  ) : isRecording ? (
+                    <MicOff className="w-7 h-7 text-white" />
+                  ) : (
+                    <Mic className="w-7 h-7 text-white" />
+                  )}
+                </button>
+                <span className="text-lg font-medium text-slate-600">
+                  {isTranscribing
+                    ? 'Transcribing... / Samajh raha hai...'
+                    : isRecording
+                      ? 'Listening... Tap to stop / Sun raha hai... Rokne ke liye dabayein'
+                      : 'Tap to speak / Bolne ke liye dabayein'}
+                </span>
+              </div>
+
               <textarea
                 rows={2}
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
-                placeholder="Type or tap response here..."
+                placeholder="Type your answer or use the mic above to speak / Jawab likhen ya upar mic se bolein..."
                 className="w-full p-4 rounded-2xl border-2 border-slate-300 focus:border-[#00C9A7] text-xl font-medium text-slate-900 bg-slate-50 outline-none shadow-inner resize-none"
               />
 
@@ -140,7 +241,7 @@ export const PatientInterviewPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleNextTurn()}
-                  disabled={submitLoading || skipLoading || !answer.trim()}
+                  disabled={submitLoading || skipLoading || isRecording || isTranscribing || !answer.trim()}
                   className="md:col-span-3 h-16 bg-gradient-to-r from-[#0D9488] to-[#059669] hover:from-teal-700 hover:to-emerald-700 active:scale-98 disabled:opacity-50 text-white font-black text-xl rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3"
                 >
                   {submitLoading ? (
@@ -155,7 +256,7 @@ export const PatientInterviewPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleNextTurn('[Skipped by patient]')}
-                  disabled={submitLoading || skipLoading}
+                  disabled={submitLoading || skipLoading || isRecording || isTranscribing}
                   className="md:col-span-3 h-12 border-2 border-slate-300 hover:border-slate-500 text-slate-700 font-bold text-base rounded-2xl transition-all disabled:opacity-50"
                 >
                   {skipLoading ? (
@@ -182,18 +283,49 @@ export const PatientInterviewPage: React.FC = () => {
               </p>
             </div>
 
-            {summary && (
-              <div className="text-left bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-3">
-                <h4 className="font-bold text-xl text-[#0C3B4A] border-b pb-2 flex items-center gap-2">
-                  <FileText className="w-6 h-6 text-teal-600" />
-                  <span>Clinical Summary Preview</span>
-                </h4>
-                <p className="text-lg text-slate-800">
-                  <strong className="text-slate-900">Chief Complaint:</strong> {summary.chief_complaint}
-                </p>
-                <p className="text-lg text-slate-800">
-                  <strong className="text-slate-900">HPI:</strong> {summary.hpi}
-                </p>
+            {summaryLoading && (
+              <div className="flex flex-col items-center gap-4 py-6">
+                <Loader2 className="w-12 h-12 text-teal-600 animate-spin" />
+                <p className="text-2xl font-bold text-[#0C3B4A]">Aapki jaanch ho rahi hai...</p>
+                <p className="text-lg text-slate-500">Generating your clinical summary / Summary tayyar ho raha hai</p>
+              </div>
+            )}
+
+            {!summaryLoading && summary && (
+              <div className="text-left space-y-6">
+                {/* Hindi Summary */}
+                <div className="bg-orange-50 p-6 rounded-3xl border border-orange-200 space-y-3">
+                  <h4 className="font-bold text-xl text-orange-900 border-b border-orange-200 pb-2">Hindi Summary</h4>
+                  {summary.points.map((point, i) => (
+                    <p key={i} className="text-lg text-orange-900">• {point.hi}</p>
+                  ))}
+                </div>
+
+                {/* English Summary */}
+                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-3">
+                  <h4 className="font-bold text-xl text-[#0C3B4A] border-b border-slate-200 pb-2 flex items-center gap-2">
+                    <FileText className="w-6 h-6 text-teal-600" />
+                    <span>Clinical Summary (English)</span>
+                  </h4>
+                  {summary.points.map((point, i) => (
+                    <p key={i} className="text-lg text-slate-800">• {point.en}</p>
+                  ))}
+                </div>
+
+                {/* Red Flags */}
+                {summary.red_flags.length > 0 && (
+                  <div className="bg-red-50 rounded-3xl p-6 border border-red-200">
+                    <p className="font-bold text-red-700 flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5" />
+                      Red Flags
+                    </p>
+                    <ul className="mt-2 space-y-1">
+                      {summary.red_flags.map((flag, i) => (
+                        <li key={i} className="text-red-600 text-lg">• {flag}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
 
