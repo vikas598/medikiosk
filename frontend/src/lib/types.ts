@@ -74,6 +74,7 @@ export interface DoctorDocument {
   storage_path: string | null;
   size: number | null;
   uploaded_at: string | null;
+  document_date?: string | null;
   url?: string | null;
   token?: string | null;
 }

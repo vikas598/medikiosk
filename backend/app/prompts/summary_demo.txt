@@ -11,7 +11,7 @@ INPUT FORMAT:
 A JSON object containing the interview and document evidence:
 {
   "patient_interview_transcript": [{"q": "question asked", "a": "patient answer"}, ...],
-  "medical_document_information": [{"filename": "report.pdf", "text": "extracted document text"}, ...]
+  "medical_document_information": [{"filename": "report.pdf", "document_date": "2026-09-02", "days_ago": 5, "text": "extracted document text"}, ...]
 }
 
 OUTPUT FORMAT:
@@ -46,6 +46,7 @@ RULES:
 - "red_flags": list any dangerous symptoms (chest pain + SOB, stroke signs, LOC). Empty array [] if none.
 - Use information from both the transcript and medical documents when present.
 - Distinguish patient-reported symptoms from documented medical findings, and identify important documented results.
+- When mentioning a finding from a medical document, explicitly include its report date and relative age, such as "In the report dated 2 September 2026 (5 days ago), ALT was 67 U/L."
 - Do NOT invent information not in the transcript or documents.
 - Do NOT diagnose. Use "Evaluate for...", "Suggestive of...", "Rule out..." in the last point.
 - Keep it SHORT. The doctor is busy. This is a 10-second glance, not a full case sheet.

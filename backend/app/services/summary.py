@@ -1,7 +1,11 @@
 import json
 from app.adapters.llm import call_llm_json
 from app.db import supabase
-from app.services.document_extraction import extract_document_text
+from app.services.document_extraction import (
+    days_since_document_date,
+    extract_document_date,
+    extract_document_text,
+)
 
 with open("app/prompts/summary_demo.txt") as f:
     SUMMARY_SYSTEM_PROMPT = f.read()
@@ -36,7 +40,13 @@ def generate_summary(session_id: str) -> dict:
             content = supabase.storage.from_("medical-documents").download(storage_path)
             text = extract_document_text(content, document.get("file_type"), document.get("filename"))
             if text:
-                document_information.append({"filename": document.get("filename"), "text": text})
+                document_date = extract_document_date(text)
+                document_information.append({
+                    "filename": document.get("filename"),
+                    "document_date": document_date,
+                    "days_ago": days_since_document_date(document_date),
+                    "text": text,
+                })
         except Exception as e:
             print(f"  WARNING — Document extraction failed for {document.get('filename')}: {type(e).__name__}: {e}")
 

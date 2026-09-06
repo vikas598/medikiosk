@@ -22,6 +22,11 @@ const formatTimestamp = (value?: string | null) => {
   return date.toLocaleString();
 };
 
+const formatDocumentDate = (value: string) => {
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
+};
+
 const formatLabel = (value: string) => value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 
 const formatSummaryValue = (value: unknown) => {
@@ -368,7 +373,7 @@ export const DoctorSessionDetailPage: React.FC = () => {
                       <div>
                         <p className="font-bold text-[#0C3B4A]">{doc.filename || 'Medical document'}</p>
                         <p className="text-sm text-slate-600">
-                          Token {doc.token || session.token} • {doc.file_type || 'Unknown type'} • {doc.size ? `${Math.round(doc.size / 1024)} KB` : 'Unknown size'}
+                          Report date: {doc.document_date ? formatDocumentDate(doc.document_date) : 'Not detected'} • Token {doc.token || session.token} • {doc.file_type || 'Unknown type'} • {doc.size ? `${Math.round(doc.size / 1024)} KB` : 'Unknown size'}
                         </p>
                       </div>
                       <button

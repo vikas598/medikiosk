@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from app.db import supabase
 from app.schema import ApproveRequest, UpdateSummaryRequest
+from app.services.document_extraction import extract_document_date, extract_document_text
 
 router = APIRouter(prefix="/doctor", tags=["doctor"])
 
@@ -35,6 +36,19 @@ def _signed_url(storage_path):
     except Exception:
         return None
     return None
+
+
+def _document_date(doc):
+    storage_path = doc.get("storage_path")
+    if not storage_path:
+        return None
+    try:
+        content = supabase.storage.from_("medical-documents").download(storage_path)
+        text = extract_document_text(content, doc.get("file_type"), doc.get("filename"))
+        return extract_document_date(text)
+    except Exception as exc:
+        print(f"  WARNING - Document date extraction failed for {doc.get('filename')}: {type(exc).__name__}: {exc}")
+        return None
 
 
 @router.get("/queue")
@@ -167,6 +181,7 @@ def get_session_detail(session_id: str):
             "storage_path": storage_path,
             "size": doc.get("size"),
             "uploaded_at": doc.get("uploaded_at") or doc.get("created_at"),
+            "document_date": _document_date(doc),
             "url": _signed_url(storage_path),
         })
 
@@ -198,8 +213,18 @@ def get_session_detail(session_id: str):
             "storage_path": doc.get("storage_path"),
             "size": doc.get("size"),
             "uploaded_at": doc.get("uploaded_at") or doc.get("created_at"),
+            "document_date": _document_date(doc),
             "url": _signed_url(doc.get("storage_path")),
         })
+
+    all_documents.sort(
+        key=lambda doc: (
+            bool(doc.get("document_date")),
+            doc.get("document_date") or "",
+            doc.get("uploaded_at") or "",
+        ),
+        reverse=True,
+    )
 
     return {
         "session_id": session_row.get("id"),
