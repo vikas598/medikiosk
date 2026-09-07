@@ -1,4 +1,3 @@
-import React from 'react';
 import { Printer, Check } from 'lucide-react';
 
 interface TokenSlipProps {

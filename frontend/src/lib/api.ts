@@ -1,7 +1,7 @@
 import type { SessionResponse, TurnResponse, FinalizeResponse, StructuredSummary, DoctorQueueResponse } from './types';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -91,6 +91,21 @@ export const transcribeAudio = async (
     { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 30000 },
   );
   return res.data.text;
+};
+
+export const fetchQuestionAudio = async (
+  text: string,
+  language: string,
+  signal?: AbortSignal,
+): Promise<Blob> => {
+  const response = await fetch(`${API_URL}/api/tts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, language }),
+    signal,
+  });
+  if (!response.ok) throw new Error(`TTS request failed: ${response.status}`);
+  return response.blob();
 };
 
 /**

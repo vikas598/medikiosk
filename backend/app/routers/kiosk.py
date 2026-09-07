@@ -1,17 +1,21 @@
 import json
+from itertools import chain
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi.responses import Response, StreamingResponse
 from app.db import supabase
 from datetime import datetime
 
 from app.adapters.llm import call_llm_json
 from app.adapters.deepgram import transcribe_audio
-from app.schema import TurnRequest, ConsentRequest
+from app.schema import TurnRequest, ConsentRequest, TTSRequest
 from app.services.interview import process_turn
 from app.services.summary import generate_summary
+from app.services.tts import stream_speech
 
 router = APIRouter(prefix="/kiosk", tags=["kiosk"])
+tts_router = APIRouter(prefix="/api", tags=["tts"])
 INTERVIEW_SYSTEM_PROMPT = (
     Path(__file__).resolve().parents[1] / "prompts" / "interview.txt"
 ).read_text(encoding="utf-8")
@@ -102,6 +106,19 @@ def transcribe(session_id: str, audio: UploadFile = File(...)):
         print(f"  WARNING — Transcription failed ({type(e).__name__}: {e})")
         raise HTTPException(status_code=502, detail="Transcription failed. Please try again.")
     return {"text": text}
+
+
+@tts_router.post("/tts")
+def text_to_speech(req: TTSRequest):
+    if not req.text.strip():
+        raise HTTPException(status_code=400, detail="No text received")
+    try:
+        audio_stream = stream_speech(req.text.strip(), req.language)
+        first_chunk = next(audio_stream)
+    except Exception as e:
+        print(f"  WARNING — TTS failed ({type(e).__name__}: {e})")
+        raise HTTPException(status_code=502, detail="Text-to-speech failed. Please try again.") from e
+    return StreamingResponse(chain((first_chunk,), audio_stream), media_type="audio/mpeg")
 
 
 # Finalize — generate AI summary from transcript

@@ -49,6 +49,11 @@ class Gender(str, Enum):
     OTHER = "O"
 
 
+class TTSRequest(BaseModel):
+    text: str = Field(min_length=1)
+    language: str = "en"
+
+
 class RedFlagTier(str, Enum):
     """Severity tier for red-flag detection."""
     CRITICAL = "critical"    # pinned to top of queue, banner

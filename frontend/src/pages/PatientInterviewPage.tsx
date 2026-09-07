@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { HelpCircle, Send, CheckCircle2, Loader2, ArrowRight, FileUp, FileText, AlertCircle, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
-import { submitTurn, finalizeSession, transcribeAudio } from '../lib/api';
+import { submitTurn, finalizeSession, transcribeAudio, fetchQuestionAudio } from '../lib/api';
 import type { SessionResponse, StructuredSummary } from '../lib/types';
 
 export const PatientInterviewPage: React.FC = () => {
@@ -29,64 +29,102 @@ export const PatientInterviewPage: React.FC = () => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [isSpeechLoading, setIsSpeechLoading] = useState<boolean>(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
+  const speechAbortRef = useRef<AbortController | null>(null);
+  const questionAudioCacheRef = useRef<Map<string, Blob>>(new Map());
+  const questionAudioRequestsRef = useRef<Map<string, Promise<Blob>>>(new Map());
   const submitInFlight = useRef(false);
 
-  const getSpeechLanguage = () => {
-    const language = session?.language?.toLowerCase() || 'en';
-    if (language.startsWith('hi') || language.includes('hindi')) return 'hi-IN';
-    if (language.startsWith('en') || language.includes('english')) return 'en-IN';
-    return language.includes('-') ? language : `${language}-IN`;
+  const questionCacheKey = (question: string, language: string) => `${language}:${question}`;
+
+  const preloadQuestionAudio = (question: string, language: string, signal: AbortSignal) => {
+    const cacheKey = questionCacheKey(question, language);
+    const cachedAudio = questionAudioCacheRef.current.get(cacheKey);
+    if (cachedAudio) return Promise.resolve(cachedAudio);
+
+    const pendingRequest = questionAudioRequestsRef.current.get(cacheKey);
+    if (pendingRequest) return pendingRequest;
+
+    const request = fetchQuestionAudio(question, language, signal).then((audioBlob) => {
+      questionAudioCacheRef.current.set(cacheKey, audioBlob);
+      questionAudioRequestsRef.current.delete(cacheKey);
+      return audioBlob;
+    }).catch((error) => {
+      questionAudioRequestsRef.current.delete(cacheKey);
+      throw error;
+    });
+    questionAudioRequestsRef.current.set(cacheKey, request);
+    return request;
   };
 
   const stopSpeaking = () => {
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    speechRef.current = null;
+    speechAbortRef.current?.abort();
+    speechAbortRef.current = null;
+    audioRef.current?.pause();
+    if (audioRef.current) audioRef.current.currentTime = 0;
+    if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+    audioRef.current = null;
+    audioUrlRef.current = null;
+    setIsSpeechLoading(false);
     setIsSpeaking(false);
   };
 
-  const toggleQuestionSpeech = () => {
-    if (!('speechSynthesis' in window)) {
-      setErrorMsg('Audio playback is not supported in this browser. / Is browser mein audio support nahi hai.');
-      return;
-    }
-
-    if (isSpeaking) {
+  const toggleQuestionSpeech = async () => {
+    if (isSpeaking || isSpeechLoading) {
       stopSpeaking();
       return;
     }
 
-    window.speechSynthesis.cancel();
-    const language = getSpeechLanguage();
-    const utterance = new SpeechSynthesisUtterance(currentQuestion);
-    utterance.lang = language;
-    const voices = window.speechSynthesis.getVoices();
-    utterance.voice = voices.find((voice) => voice.lang.toLowerCase() === language.toLowerCase())
-      || voices.find((voice) => voice.lang.toLowerCase().startsWith(language.slice(0, 2).toLowerCase()))
-      || null;
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => {
-      if (speechRef.current === utterance) {
-        speechRef.current = null;
-        setIsSpeaking(false);
+    const abortController = new AbortController();
+    speechAbortRef.current = abortController;
+    setErrorMsg('');
+    setIsSpeechLoading(true);
+    try {
+      const audioBlob = await preloadQuestionAudio(
+        currentQuestion,
+        session!.language,
+        abortController.signal,
+      );
+      if (abortController.signal.aborted) return;
+
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audioUrlRef.current = audioUrl;
+      audioRef.current = audio;
+      audio.onended = stopSpeaking;
+      audio.onerror = () => {
+        setErrorMsg('Audio playback failed. Please try again. / Audio nahi chal saka, dobara try karein.');
+        stopSpeaking();
+      };
+      setIsSpeechLoading(false);
+      setIsSpeaking(true);
+      await audio.play();
+    } catch (err) {
+      if (!abortController.signal.aborted) {
+        console.error('Question TTS error:', err);
+        setErrorMsg('Audio could not be generated. Please try again. / Audio nahi ban saka, dobara try karein.');
       }
-    };
-    utterance.onerror = () => {
-      if (speechRef.current === utterance) {
-        speechRef.current = null;
-        setIsSpeaking(false);
-      }
-    };
-    speechRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+      stopSpeaking();
+    }
   };
 
   useEffect(() => {
     stopSpeaking();
-    return stopSpeaking;
+    const preloadController = new AbortController();
+    void preloadQuestionAudio(
+      currentQuestion,
+      session?.language || 'en',
+      preloadController.signal,
+    ).catch(() => undefined);
+    return () => {
+      preloadController.abort();
+      stopSpeaking();
+    };
   }, [currentQuestion]);
 
   const requestMicrophoneAccess = async () => {
@@ -264,24 +302,26 @@ export const PatientInterviewPage: React.FC = () => {
                 </h2>
                 <button
                   type="button"
-                  onClick={toggleQuestionSpeech}
-                  aria-label={isSpeaking ? 'Stop reading question aloud' : 'Read question aloud'}
+                  onClick={() => void toggleQuestionSpeech()}
+                  aria-label={isSpeaking || isSpeechLoading ? 'Stop reading question aloud' : 'Read question aloud'}
                   aria-pressed={isSpeaking}
                   className={`min-w-14 min-h-14 w-14 h-14 shrink-0 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 focus:outline-none focus:ring-4 focus:ring-teal-200 ${
-                    isSpeaking
+                    isSpeaking || isSpeechLoading
                       ? 'bg-amber-500 hover:bg-amber-600 animate-pulse'
                       : 'bg-[#00A389] hover:bg-teal-600'
                   }`}
                 >
-                  {isSpeaking ? (
+                  {isSpeechLoading ? (
+                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  ) : isSpeaking ? (
                     <VolumeX className="w-8 h-8 text-white" />
                   ) : (
                     <Volume2 className="w-8 h-8 text-white" />
                   )}
                 </button>
               </div>
-              <span className="sr-only" aria-live="polite">
-                {isSpeaking ? 'Speaking...' : ''}
+              <span className="text-sm font-semibold text-amber-700" aria-live="polite">
+                {isSpeechLoading ? 'Preparing audio...' : isSpeaking ? 'Speaking...' : ''}
               </span>
             </div>
 
