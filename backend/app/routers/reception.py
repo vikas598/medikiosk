@@ -96,9 +96,23 @@ def get_reception_queue():
     active_sessions = []
     completed_today = 0
     red_flags_pending = 0
-    total_active = len(rows)
     
+    seen_patients = set()
+    deduped_rows = []
+    
+    # Rows are ordered by started_at desc, so the first occurrence is the latest session.
     for row in rows:
+        patient = _extract_patient(row)
+        unique_key = patient.get("phone") or patient.get("name") or row.get("patient_id")
+        if unique_key and unique_key in seen_patients:
+            continue
+        if unique_key:
+            seen_patients.add(unique_key)
+        deduped_rows.append(row)
+
+    total_active = len(deduped_rows)
+    
+    for row in deduped_rows:
         patient = _extract_patient(row)
         if row.get("priority_flag") and not row.get("red_flag_acknowledged"):
             red_flags_pending += 1

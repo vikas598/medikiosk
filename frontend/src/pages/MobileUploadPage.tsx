@@ -348,7 +348,21 @@ export const MobileUploadPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="pt-4">
+            <div className="pt-4 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    window.close();
+                  } catch (e) {
+                    console.error("Could not close window automatically");
+                  }
+                }}
+                className="w-full py-4 bg-[#14A89E] hover:bg-[#118d84] active:scale-95 text-white font-bold rounded-2xl text-base transition-all shadow-lg shadow-[#14A89E]/20"
+              >
+                Done Submitting
+              </button>
+              
               <button
                 type="button"
                 onClick={() => {

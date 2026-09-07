@@ -10,6 +10,9 @@ import { DoctorDashboardPage } from './pages/DoctorDashboardPage';
 import { DoctorSessionDetailPage } from './pages/DoctorSessionDetailPage';
 import { KioskDocumentUploadPage } from './pages/KioskDocumentUploadPage';
 import { MobileUploadPage } from './pages/MobileUploadPage';
+import { ReceptionLogin } from './pages/reception/Login';
+import { ReceptionDashboard } from './pages/reception/Dashboard';
+import { ReceptionRegister } from './pages/reception/Register';
 
 function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +43,7 @@ function AppContent() {
         {/* Render Main Header except on standalone Mobile Upload route */}
         <Routes>
           <Route path="/mobile-upload/:token" element={null} />
+          <Route path="/reception/*" element={null} />
           <Route path="*" element={<Header />} />
         </Routes>
 
@@ -56,6 +60,10 @@ function AppContent() {
             <Route path="/patient/interview" element={<PatientInterviewPage />} />
             <Route path="/patient/documents" element={<KioskDocumentUploadPage />} />
             <Route path="/mobile-upload/:token" element={<MobileUploadPage />} />
+            
+            <Route path="/reception/login" element={<ReceptionLogin />} />
+            <Route path="/reception/dashboard" element={<ReceptionDashboard />} />
+            <Route path="/reception/register" element={<ReceptionRegister />} />
           </Routes>
         </main>
       </div>

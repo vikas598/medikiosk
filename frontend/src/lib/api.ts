@@ -122,3 +122,34 @@ export const approveDoctorSession = async (sessionId: string, edits?: Record<str
   const res = await api.post(`/doctor/sessions/${sessionId}/approve`, { edits: edits || null });
   return res.data;
 };
+
+// Reception endpoints
+export const registerPatient = async (data: any) => {
+  const res = await api.post('/reception/patients', data);
+  return res.data;
+};
+
+export const getReceptionQueue = async () => {
+  const res = await api.get('/reception/queue');
+  return res.data;
+};
+
+export const acknowledgeRedFlag = async (sessionId: string) => {
+  const res = await api.post(`/reception/sessions/${sessionId}/acknowledge-red-flag`);
+  return res.data;
+};
+
+export const changeDepartment = async (sessionId: string, department: string) => {
+  const res = await api.patch(`/reception/sessions/${sessionId}/department`, { department });
+  return res.data;
+};
+
+export const regenerateToken = async (sessionId: string) => {
+  const res = await api.post(`/reception/sessions/${sessionId}/regenerate-token`);
+  return res.data;
+};
+
+export const getReceptionStats = async () => {
+  const res = await api.get('/reception/stats');
+  return res.data;
+};

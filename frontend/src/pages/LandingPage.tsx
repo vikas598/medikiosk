@@ -15,8 +15,8 @@ export const LandingPage: React.FC = () => {
       </div>
 
       {/* Main Container Box matching Screenshot 1 */}
-      <div className="bg-[#123e50]/90 backdrop-blur-md rounded-[2.5rem] p-3 md:p-4 shadow-[0_20px_60px_rgba(0,0,0,0.35)] border border-[#2b6072] w-full max-w-4xl">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-[#123e50]/90 backdrop-blur-md rounded-[2.5rem] p-3 md:p-4 shadow-[0_20px_60px_rgba(0,0,0,0.35)] border border-[#2b6072] w-full max-w-5xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* PATIENT OPTION CARD */}
           <button
             type="button"
@@ -60,6 +60,30 @@ export const LandingPage: React.FC = () => {
             </p>
 
             <div className="inline-flex items-center justify-center gap-2 w-48 py-2 rounded-full bg-[#187fe5] text-white font-bold text-lg md:text-lg shadow-[0_7px_14px_rgba(20,107,214,0.25)] group-hover:translate-x-1 transition-transform">
+              <span>Continue</span>
+              <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+            </div>
+          </button>
+
+          {/* RECEPTION OPTION CARD */}
+          <button
+            type="button"
+            onClick={() => navigate('/reception/login')}
+            className="group flex flex-col items-center justify-center text-center p-4 md:p-5 min-h-[220px] md:min-h-[230px] rounded-3xl bg-gradient-to-br from-[#fff6e5] via-[#fffbf2] to-[#ffeed1] hover:brightness-105 border border-[#ffe0ad] shadow-[0_10px_24px_rgba(0,0,0,0.16)] hover:shadow-xl transition-all duration-300 cursor-pointer"
+          >
+            <div className="w-20 h-20 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-[#f59e0b] to-[#d97706] text-white flex items-center justify-center shadow-[0_8px_18px_rgba(217,119,6,0.35)] group-hover:scale-105 transition-transform duration-300 mb-3">
+              <div className="text-4xl">🏥</div>
+            </div>
+
+            <h3 className="text-3xl md:text-3xl font-extrabold text-[#071822] tracking-tight mb-2">
+              Reception
+            </h3>
+
+            <p className="text-lg md:text-lg text-slate-500 font-medium mb-3">
+              Register patients & manage queue
+            </p>
+
+            <div className="inline-flex items-center justify-center gap-2 w-48 py-2 rounded-full bg-[#d97706] text-white font-bold text-lg md:text-lg shadow-[0_7px_14px_rgba(217,119,6,0.25)] group-hover:translate-x-1 transition-transform">
               <span>Continue</span>
               <ChevronRight className="w-5 h-5 stroke-[2.5]" />
             </div>

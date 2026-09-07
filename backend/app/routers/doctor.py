@@ -69,8 +69,8 @@ def get_queue(
     rows_by_patient = {}
     for row in rows:
         patient = _extract_patient(row)
-        patient_id = patient.get("id") or row.get("patient_id") or row.get("id")
-        rows_by_patient.setdefault(patient_id, []).append(row)
+        patient_key = patient.get("phone") or patient.get("name") or patient.get("id") or row.get("patient_id") or row.get("id")
+        rows_by_patient.setdefault(patient_key, []).append(row)
 
     unique_rows = []
     for patient_rows in rows_by_patient.values():
