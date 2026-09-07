@@ -12,6 +12,7 @@ export interface SessionResponse {
   state: string;
   language: string;
   priority_flag: boolean;
+  was_priority_flag?: boolean;
   priority_reason: string | null;
   started_at: string;
   expires_at: string;
@@ -44,6 +45,7 @@ export interface DoctorQueueItem {
   token: string;
   state: string;
   priority_flag: boolean;
+  was_priority_flag?: boolean;
   priority_reason: string | null;
   started_at: string;
   completed_at?: string | null;

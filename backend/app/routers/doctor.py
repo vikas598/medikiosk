@@ -75,13 +75,21 @@ def get_queue(
     unique_rows = []
     for patient_rows in rows_by_patient.values():
         latest = patient_rows[0]
-        flagged_row = next((row for row in patient_rows if row.get("priority_flag")), None)
+        was_priority_flag = any(
+            row.get("priority_flag") or row.get("priority_reason")
+            for row in patient_rows
+        )
+        flagged_row = next(
+            (row for row in patient_rows if row.get("priority_flag") and row.get("state") != "approved"),
+            None,
+        )
         if flagged_row:
             latest = {
                 **latest,
                 "priority_flag": True,
                 "priority_reason": flagged_row.get("priority_reason") or latest.get("priority_reason"),
             }
+        latest["was_priority_flag"] = was_priority_flag
         unique_rows.append(latest)
     unique_rows.sort(key=lambda row: row.get("started_at") or "", reverse=True)
     unique_rows.sort(key=lambda row: bool(row.get("priority_flag", False)), reverse=True)
@@ -103,6 +111,7 @@ def get_queue(
             "token": row.get("token"),
             "state": row.get("state"),
             "priority_flag": bool(row.get("priority_flag", False)),
+            "was_priority_flag": bool(row.get("was_priority_flag", False)),
             "priority_reason": row.get("priority_reason"),
             "started_at": row.get("started_at"),
             "completed_at": row.get("completed_at"),
@@ -270,6 +279,7 @@ def approve(session_id: str, req: ApproveRequest):
     if not session_result.data:
         raise HTTPException(status_code=404, detail="Patient session not found.")
     if session_result.data[0].get("state") == "approved":
+        supabase.table("intake_sessions").update({"priority_flag": False}).eq("id", session_id).execute()
         return {"status": "ok", "session_state": "approved"}
 
     update_data = {"status": "approved"}
@@ -280,5 +290,8 @@ def approve(session_id: str, req: ApproveRequest):
     if summary_result.data:
         supabase.table("summaries").update(update_data).eq("session_id", session_id).execute()
 
-    supabase.table("intake_sessions").update({"state": "approved"}).eq("id", session_id).execute()
+    supabase.table("intake_sessions").update({
+        "state": "approved",
+        "priority_flag": False,
+    }).eq("id", session_id).execute()
     return {"status": "ok", "session_state": "approved"}

@@ -154,7 +154,12 @@ export const DoctorDashboardPage: React.FC = () => {
                         .toUpperCase() || 'P'}
                     </div>
                     <div>
-                      <h4 className="text-2xl font-bold text-slate-900">Patient: {patientName}</h4>
+                      <h4 className="text-2xl font-bold text-slate-900">
+                        Patient: {patientName}
+                        {!patient.priority_flag && patient.was_priority_flag ? (
+                          <span className="ml-2 text-red-600" title="Previously red flagged">★</span>
+                        ) : null}
+                      </h4>
                       <p className="text-lg text-slate-600">
                         Token: {patient.token} • {summaryText}
                       </p>
