@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { HelpCircle, Send, CheckCircle2, Loader2, ArrowRight, FileUp, FileText, AlertCircle, Mic, MicOff } from 'lucide-react';
+import { HelpCircle, Send, CheckCircle2, Loader2, ArrowRight, FileUp, FileText, AlertCircle, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { submitTurn, finalizeSession, transcribeAudio } from '../lib/api';
 import type { SessionResponse, StructuredSummary } from '../lib/types';
 
@@ -28,10 +28,66 @@ export const PatientInterviewPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
   const submitInFlight = useRef(false);
+
+  const getSpeechLanguage = () => {
+    const language = session?.language?.toLowerCase() || 'en';
+    if (language.startsWith('hi') || language.includes('hindi')) return 'hi-IN';
+    if (language.startsWith('en') || language.includes('english')) return 'en-IN';
+    return language.includes('-') ? language : `${language}-IN`;
+  };
+
+  const stopSpeaking = () => {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    speechRef.current = null;
+    setIsSpeaking(false);
+  };
+
+  const toggleQuestionSpeech = () => {
+    if (!('speechSynthesis' in window)) {
+      setErrorMsg('Audio playback is not supported in this browser. / Is browser mein audio support nahi hai.');
+      return;
+    }
+
+    if (isSpeaking) {
+      stopSpeaking();
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const language = getSpeechLanguage();
+    const utterance = new SpeechSynthesisUtterance(currentQuestion);
+    utterance.lang = language;
+    const voices = window.speechSynthesis.getVoices();
+    utterance.voice = voices.find((voice) => voice.lang.toLowerCase() === language.toLowerCase())
+      || voices.find((voice) => voice.lang.toLowerCase().startsWith(language.slice(0, 2).toLowerCase()))
+      || null;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => {
+      if (speechRef.current === utterance) {
+        speechRef.current = null;
+        setIsSpeaking(false);
+      }
+    };
+    utterance.onerror = () => {
+      if (speechRef.current === utterance) {
+        speechRef.current = null;
+        setIsSpeaking(false);
+      }
+    };
+    speechRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  useEffect(() => {
+    stopSpeaking();
+    return stopSpeaking;
+  }, [currentQuestion]);
 
   const requestMicrophoneAccess = async () => {
     if (!window.isSecureContext) {
@@ -131,6 +187,7 @@ export const PatientInterviewPage: React.FC = () => {
     const textToSubmit = responseVal || answer;
     if (!textToSubmit.trim() || !session || submitInFlight.current) return;
 
+    stopSpeaking();
     const isSkip = textToSubmit === '[Skipped by patient]';
     submitInFlight.current = true;
     setSubmitLoading(!isSkip);
@@ -201,9 +258,31 @@ export const PatientInterviewPage: React.FC = () => {
                 <HelpCircle className="w-6 h-6" />
                 <span>QUESTION FOR PATIENT</span>
               </div>
-              <h2 key={turnIndex} className="question-enter text-2xl md:text-3xl font-black text-[#0C3B4A] leading-tight">
-                {currentQuestion}
-              </h2>
+              <div className="flex items-start gap-3">
+                <h2 key={turnIndex} className="question-enter flex-1 text-2xl md:text-3xl font-black text-[#0C3B4A] leading-tight">
+                  {currentQuestion}
+                </h2>
+                <button
+                  type="button"
+                  onClick={toggleQuestionSpeech}
+                  aria-label={isSpeaking ? 'Stop reading question aloud' : 'Read question aloud'}
+                  aria-pressed={isSpeaking}
+                  className={`min-w-14 min-h-14 w-14 h-14 shrink-0 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 focus:outline-none focus:ring-4 focus:ring-teal-200 ${
+                    isSpeaking
+                      ? 'bg-amber-500 hover:bg-amber-600 animate-pulse'
+                      : 'bg-[#00A389] hover:bg-teal-600'
+                  }`}
+                >
+                  {isSpeaking ? (
+                    <VolumeX className="w-8 h-8 text-white" />
+                  ) : (
+                    <Volume2 className="w-8 h-8 text-white" />
+                  )}
+                </button>
+              </div>
+              <span className="sr-only" aria-live="polite">
+                {isSpeaking ? 'Speaking...' : ''}
+              </span>
             </div>
 
             {/* Quick Touch Option Chips */}
