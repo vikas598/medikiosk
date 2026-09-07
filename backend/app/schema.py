@@ -391,3 +391,69 @@ class VerifyHandoffResponse(BaseModel):
 
 class HandoffStatusResponse(BaseModel):
     status: str  # "pending", "claimed", "expired"
+
+
+# ============================================================
+# RECEPTION ENDPOINTS
+# ============================================================
+
+class Department(str, Enum):
+    GENERAL_MEDICINE = "General Medicine"
+    CARDIOLOGY = "Cardiology"
+    AYURVEDA = "Ayurveda"
+
+
+class RegisterPatientRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    age: Optional[int] = Field(None, ge=0, le=120)
+    gender: Optional[Gender] = None
+    phone: Optional[str] = None
+    department: Department = Department.GENERAL_MEDICINE
+    language: str = "en"
+
+
+class RegisterPatientResponse(BaseModel):
+    patient: PatientInfo
+    session: SessionResponse   # reuse existing schema
+
+
+class ReceptionQueueItem(BaseModel):
+    id: str
+    token: str
+    state: SessionState
+    priority_flag: bool
+    priority_reason: Optional[str] = None
+    red_flag_acknowledged: bool = False
+    department: str
+    language: str
+    started_at: str
+    patient: PatientInfo
+
+
+class ReceptionQueueResponse(BaseModel):
+    active_sessions: list[ReceptionQueueItem]
+    completed_today: int
+    red_flags_pending: int
+    total_active: int
+
+
+class AckRedFlagResponse(BaseModel):
+    status: str = "ok"
+    acknowledged_at: str
+
+
+class ChangeDepartmentRequest(BaseModel):
+    department: Department
+
+
+class RegenerateTokenResponse(BaseModel):
+    token: str
+    expires_at: str
+
+
+class ReceptionStatsResponse(BaseModel):
+    total_today: int
+    in_progress: int
+    completed: int
+    red_flags_today: int
+    avg_completion_minutes: Optional[float] = None

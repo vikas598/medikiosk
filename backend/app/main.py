@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import kiosk, doctor, mobile
+from app.routers import kiosk, doctor, mobile, reception
 
 app = FastAPI(title="MediKiosk API", version="0.1.0")
 
@@ -14,6 +14,7 @@ app.add_middleware(
 app.include_router(kiosk.router)
 app.include_router(doctor.router)
 app.include_router(mobile.router)
+app.include_router(reception.router)
 
 @app.get("/health")
 def health():
