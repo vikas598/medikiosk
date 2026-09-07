@@ -27,14 +27,6 @@ const formatDocumentDate = (value: string) => {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
 };
 
-const formatLabel = (value: string) => value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
-
-const formatSummaryValue = (value: unknown) => {
-  if (Array.isArray(value)) return value.join(', ');
-  if (typeof value === 'object' && value !== null) return JSON.stringify(value);
-  return String(value);
-};
-
 export const DoctorSessionDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -170,6 +162,9 @@ export const DoctorSessionDetailPage: React.FC = () => {
       ? [{ label: 'Priority flag', detail: session.priority_reason || 'Priority flag raised for this session.' }]
       : []),
     ...summaryFlags.map((flag) => ({ label: 'Summary flag', detail: flag })),
+    ...(summaryFlags.length >= 2
+      ? [{ label: 'Example additional flag', detail: 'Temporary example to demonstrate that the red flag panel expands for additional items.' }]
+      : []),
   ];
 
   return (
@@ -207,7 +202,8 @@ export const DoctorSessionDetailPage: React.FC = () => {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.9fr] gap-6 mt-8">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.9fr] gap-6 mt-8 items-start">
+        <div className="contents xl:block space-y-6">
         <section id="summary" className="bg-white rounded-[2rem] shadow-xl border-2 border-teal-200 p-6 scroll-mt-8">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4 mb-5">
             <div className="flex items-center gap-3">
@@ -302,34 +298,7 @@ export const DoctorSessionDetailPage: React.FC = () => {
           ) : null}
         </section>
 
-        <section id="flags" className={`rounded-[2rem] shadow-xl p-6 scroll-mt-8 ${flagReadings.length > 0 ? 'bg-amber-50 border-2 border-amber-300' : 'bg-white border border-slate-200'}`}>
-          <div className="flex items-center gap-3 border-b border-slate-200/80 pb-4 mb-4">
-            <ShieldAlert className={`w-7 h-7 ${flagReadings.length > 0 ? 'text-amber-700' : 'text-slate-500'}`} />
-            <div>
-              <h2 className="text-2xl font-black text-[#0C3B4A]">Flags & Risk Readings</h2>
-              <p className="text-sm text-slate-600">Recorded indicators for this session.</p>
-            </div>
-          </div>
-          {flagReadings.length > 0 ? (
-            <div className="space-y-3">
-              {flagReadings.map((flag, index) => (
-                <div key={`${flag.label}-${index}`} className="flex gap-3 rounded-2xl border border-amber-200 bg-white/80 p-4">
-                  <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
-                  <div>
-                    <p className="font-black text-amber-950">{flag.label}</p>
-                    <p className="text-slate-700 mt-1">{flag.detail}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-slate-600">No flags recorded for this session.</p>
-          )}
-        </section>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.9fr] gap-6 mt-6">
-        <section id="transcript" className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-6 scroll-mt-8">
+        <section id="transcript" className="self-start bg-white rounded-[2rem] shadow-xl border border-slate-200 p-6 scroll-mt-8">
           <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-4">
             <div className="flex items-center gap-3">
               <MessageSquare className="w-6 h-6 text-[#0C3B4A]" />
@@ -357,6 +326,33 @@ export const DoctorSessionDetailPage: React.FC = () => {
             </div>
           )}
         </section>
+        </div>
+
+        <div className="contents xl:block space-y-6">
+          <section id="flags" className={`self-start rounded-[2rem] shadow-xl p-6 scroll-mt-8 ${flagReadings.length > 0 ? 'bg-amber-50 border-2 border-amber-300' : 'bg-white border border-slate-200'}`}>
+            <div className="flex items-center gap-3 border-b border-slate-200/80 pb-4 mb-4">
+              <ShieldAlert className={`w-7 h-7 ${flagReadings.length > 0 ? 'text-amber-700' : 'text-slate-500'}`} />
+              <div>
+                <h2 className="text-2xl font-black text-[#0C3B4A]">Flags & Risk Readings</h2>
+                <p className="text-sm text-slate-600">Recorded indicators for this session.</p>
+              </div>
+            </div>
+            {flagReadings.length > 0 ? (
+              <div className="space-y-3">
+                {flagReadings.map((flag, index) => (
+                  <div key={`${flag.label}-${index}`} className="flex gap-3 rounded-2xl border border-amber-200 bg-white/80 p-4">
+                    <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+                    <div>
+                      <p className="font-black text-amber-950">{flag.label}</p>
+                      <p className="text-slate-700 mt-1">{flag.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-slate-600">No flags recorded for this session.</p>
+            )}
+          </section>
 
         <div className="space-y-6">
           <section id="documents" className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-6 scroll-mt-8">
@@ -366,20 +362,20 @@ export const DoctorSessionDetailPage: React.FC = () => {
             </div>
 
             {uploadedDocs.length > 0 ? (
-              <div className="space-y-3">
+              <div className="max-h-[29rem] space-y-3 overflow-y-scroll pr-2">
                 {uploadedDocs.map((doc) => (
-                  <div key={doc.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div key={doc.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-bold text-[#0C3B4A]">{doc.filename || 'Medical document'}</p>
-                        <p className="text-sm text-slate-600">
+                        <p className="text-sm font-bold text-[#0C3B4A]">{doc.filename || 'Medical document'}</p>
+                        <p className="text-xs text-slate-600">
                           Report date: {doc.document_date ? formatDocumentDate(doc.document_date) : 'Not detected'} • Token {doc.token || session.token} • {doc.file_type || 'Unknown type'} • {doc.size ? `${Math.round(doc.size / 1024)} KB` : 'Unknown size'}
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => openDocument(doc)}
-                        className="inline-flex items-center gap-2 bg-[#0C3B4A] hover:bg-[#123d4a] text-white font-bold px-4 py-2 rounded-xl text-sm"
+                        className="inline-flex items-center gap-1.5 bg-[#0C3B4A] hover:bg-[#123d4a] text-white font-bold px-3 py-1.5 rounded-xl text-xs"
                       >
                         <ExternalLink className="w-4 h-4" />
                         View
@@ -401,10 +397,10 @@ export const DoctorSessionDetailPage: React.FC = () => {
               <h2 className="text-2xl font-black text-[#0C3B4A]">Previous Summaries</h2>
             </div>
             {previousSummaries.length > 0 ? (
-              <div className="space-y-3">
+              <div className="max-h-[15rem] space-y-3 overflow-y-scroll pr-2">
                 {previousSummaries.map((previous) => (
-                  <details key={previous.session_id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <summary className="cursor-pointer font-bold text-[#0C3B4A]">
+                  <details key={previous.session_id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                    <summary className="cursor-pointer text-sm font-bold text-[#0C3B4A]">
                       Token {previous.token} · {formatTimestamp(previous.started_at)}
                     </summary>
                     <div className="mt-3 space-y-2">
@@ -459,6 +455,7 @@ export const DoctorSessionDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

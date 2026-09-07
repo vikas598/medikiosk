@@ -2,6 +2,7 @@ from io import BytesIO
 from datetime import date, datetime
 from pathlib import Path
 import re
+from typing import Any, cast
 
 import fitz
 import pytesseract
@@ -70,8 +71,8 @@ def _extract_pdf_text(content: bytes) -> str:
     try:
         ocr_text = []
         for page in pdf:
-            pixmap = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
-            image = Image.frombytes("RGB", [pixmap.width, pixmap.height], pixmap.samples)
+            pixmap = cast(Any, page).get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+            image = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
             ocr_text.append(_ocr_image(image))
         return "\n".join(ocr_text).strip()
     finally:
