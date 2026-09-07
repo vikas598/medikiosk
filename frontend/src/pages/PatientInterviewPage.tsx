@@ -176,15 +176,15 @@ export const PatientInterviewPage: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col justify-center items-center gap-4 px-4 pb-6 max-w-4xl mx-auto w-full">
+    <div className="flex-1 flex flex-col justify-center items-center gap-2 px-4 pb-4 max-w-4xl mx-auto w-full">
       {/* Header Banner */}
-      <div className="w-full bg-[#0C3B4A] text-white p-4 md:p-5 rounded-3xl shadow-xl flex items-center justify-between border-b-4 border-[#00C9A7]">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-[#00C9A7] text-slate-950 flex items-center justify-center font-black text-2xl">
+      <div className="w-full bg-[#0C3B4A] text-white p-3 md:p-4 rounded-3xl shadow-xl flex items-center justify-between border-b-4 border-[#00C9A7]">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-[#00C9A7] text-slate-950 flex items-center justify-center font-black text-xl">
             Q{turnIndex}
           </div>
           <div>
-            <h3 className="text-2xl font-bold">Patient Intake Interview</h3>
+            <h3 className="text-xl font-bold">Patient Intake Interview</h3>
             <p className="text-cyan-200">Patient: {session.patients?.name || 'Session ' + session.token}</p>
           </div>
         </div>
@@ -193,29 +193,29 @@ export const PatientInterviewPage: React.FC = () => {
       </div>
 
       {/* Main Card */}
-      <div className="kiosk-card w-full p-6 md:p-8 rounded-[2.5rem] shadow-2xl border-4 border-teal-500/20 bg-white my-1">
+      <div className="kiosk-card w-full p-4 md:p-6 rounded-[2rem] shadow-2xl border-2 border-teal-500/20 bg-white my-1">
         {!isComplete ? (
-          <div className="space-y-8">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 text-[#00A389] font-extrabold text-xl">
-                <HelpCircle className="w-8 h-8" />
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-[#00A389] font-extrabold text-base">
+                <HelpCircle className="w-6 h-6" />
                 <span>QUESTION FOR PATIENT</span>
               </div>
-              <h2 key={turnIndex} className="question-enter text-3xl md:text-4xl font-black text-[#0C3B4A] leading-tight">
+              <h2 key={turnIndex} className="question-enter text-2xl md:text-3xl font-black text-[#0C3B4A] leading-tight">
                 {currentQuestion}
               </h2>
             </div>
 
             {/* Quick Touch Option Chips */}
             {touchOptions.length > 0 && (
-              <div className="flex flex-wrap gap-4 pt-2">
+              <div className="flex flex-wrap gap-2 pt-1">
                 {touchOptions.map((opt, i) => (
                   <button
                     key={i}
                     type="button"
                     onClick={() => handleNextTurn(opt)}
                     disabled={submitLoading || skipLoading || isRecording || isTranscribing}
-                    className="py-4 px-8 rounded-2xl bg-teal-50 hover:bg-[#00C9A7] hover:text-slate-950 text-[#0C3B4A] font-bold text-xl border-2 border-teal-200 shadow-md transition-all active:scale-95 disabled:opacity-50"
+                    className="py-2 px-4 rounded-2xl bg-teal-50 hover:bg-[#00C9A7] hover:text-slate-950 text-[#0C3B4A] font-bold text-base border-2 border-teal-200 shadow-md transition-all active:scale-95 disabled:opacity-50"
                   >
                     {opt}
                   </button>
@@ -225,21 +225,21 @@ export const PatientInterviewPage: React.FC = () => {
 
             {/* Error Message */}
             {errorMsg && (
-              <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-2xl text-lg font-medium">
-                <AlertCircle className="w-6 h-6 flex-shrink-0" />
+              <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-base font-medium">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <span>{errorMsg}</span>
               </div>
             )}
 
             {/* Response Input */}
-            <div className="space-y-4 pt-4">
+            <div className="space-y-2 pt-2">
               {/* Mic Button */}
               <div className="flex items-center gap-4">
                 <button
                   type="button"
                   onClick={isRecording ? stopRecording : startRecording}
                   disabled={submitLoading || skipLoading || isTranscribing}
-                  className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 disabled:opacity-50 ${
+                  className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 disabled:opacity-50 ${
                     isRecording
                       ? 'bg-red-500 hover:bg-red-600 animate-pulse'
                       : 'bg-[#0C3B4A] hover:bg-slate-700'
@@ -253,7 +253,7 @@ export const PatientInterviewPage: React.FC = () => {
                     <Mic className="w-7 h-7 text-white" />
                   )}
                 </button>
-                <span className="text-lg font-medium text-slate-600">
+                <span className="text-base font-medium text-slate-600">
                   {isTranscribing
                     ? 'Transcribing... / Samajh raha hai...'
                     : isRecording
@@ -274,15 +274,15 @@ export const PatientInterviewPage: React.FC = () => {
                 }}
                 aria-label="Interview answer"
                 placeholder="Type your answer or use the mic above to speak / Jawab likhen ya upar mic se bolein..."
-                className="w-full p-4 rounded-2xl border-2 border-slate-300 focus:border-[#00C9A7] text-xl font-medium text-slate-900 bg-slate-50 outline-none shadow-inner resize-none"
+                className="w-full p-3 rounded-2xl border-2 border-slate-300 focus:border-[#00C9A7] text-lg font-medium text-slate-900 bg-slate-50 outline-none shadow-inner resize-none"
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => handleNextTurn()}
                   disabled={submitLoading || skipLoading || isRecording || isTranscribing || !answer.trim()}
-                  className="md:col-span-3 h-16 bg-gradient-to-r from-[#0D9488] to-[#059669] hover:from-teal-700 hover:to-emerald-700 active:scale-98 disabled:opacity-50 text-white font-black text-xl rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3"
+                  className="md:col-span-3 h-14 bg-gradient-to-r from-[#0D9488] to-[#059669] hover:from-teal-700 hover:to-emerald-700 active:scale-98 disabled:opacity-50 text-white font-black text-lg rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3"
                 >
                   {submitLoading ? (
                     <Loader2 className="w-8 h-8 animate-spin" />
@@ -297,7 +297,7 @@ export const PatientInterviewPage: React.FC = () => {
                   type="button"
                   onClick={() => handleNextTurn('[Skipped by patient]')}
                   disabled={submitLoading || skipLoading || isRecording || isTranscribing}
-                  className="md:col-span-3 h-12 border-2 border-slate-300 hover:border-slate-500 text-slate-700 font-bold text-base rounded-2xl transition-all disabled:opacity-50"
+                  className="md:col-span-3 h-10 border-2 border-slate-300 hover:border-slate-500 text-slate-700 font-bold text-sm rounded-2xl transition-all disabled:opacity-50"
                 >
                   {skipLoading ? (
                     <>

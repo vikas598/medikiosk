@@ -62,9 +62,9 @@ export const DoctorAuthPage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-center items-center px-4 pb-12 w-full">
+    <div className="flex-1 flex flex-col justify-center items-center px-4 pb-6 w-full">
       {/* Central White Card matching Screenshot 3 */}
-      <div className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-2xl max-w-md w-full text-center space-y-6">
+      <div className="bg-white rounded-[2rem] p-6 md:p-7 shadow-2xl max-w-md w-full text-center space-y-4">
         
         {/* Toggle Log In / Sign Up Tabs */}
         <div className="bg-[#F1F5F9] p-1.5 rounded-2xl flex">
@@ -146,7 +146,7 @@ export const DoctorAuthPage: React.FC = () => {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-slate-200 focus:border-[#0D9488] text-slate-900 font-semibold bg-white outline-none transition-all text-base"
+                className="w-full pl-12 pr-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-[#0D9488] text-slate-900 font-semibold bg-white outline-none transition-all text-base"
               />
             </div>
           </div>
@@ -185,7 +185,7 @@ export const DoctorAuthPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 rounded-2xl font-bold text-xl text-white bg-gradient-to-r from-[#0D9488] to-[#059669] hover:from-teal-700 hover:to-emerald-700 active:scale-98 shadow-lg transition-all flex items-center justify-center gap-2 mt-6"
+            className="w-full py-3 rounded-2xl font-bold text-lg text-white bg-gradient-to-r from-[#0D9488] to-[#059669] hover:from-teal-700 hover:to-emerald-700 active:scale-98 shadow-lg transition-all flex items-center justify-center gap-2 mt-4"
           >
             {loading ? (
               <Loader2 className="w-6 h-6 animate-spin text-white" />

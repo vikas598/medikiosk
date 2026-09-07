@@ -77,14 +77,14 @@ export const PatientTokenPage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-center items-center px-4 pb-12 w-full">
+    <div className="flex-1 flex flex-col justify-center items-center px-4 pb-6 w-full">
       {/* Central White Card matching Screenshot 2 */}
-      <div className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-2xl max-w-md w-full text-center space-y-6">
+      <div className="bg-white rounded-[2rem] p-6 md:p-7 shadow-2xl max-w-md w-full text-center space-y-4">
         <div>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-[#0A1926] tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-[#0A1926] tracking-tight">
             Patient Access
           </h2>
-          <p className="text-lg text-slate-500 font-medium mt-1">
+          <p className="text-base text-slate-500 font-medium mt-1">
             Enter your patient token
           </p>
         </div>
@@ -120,9 +120,9 @@ export const PatientTokenPage: React.FC = () => {
               void handleSubmit();
             }
           }}
-          className="space-y-6"
+          className="space-y-4"
         >
-          <label className="bg-[#F8FAFC] border border-slate-200 rounded-2xl py-5 px-6 flex justify-center items-center shadow-inner min-h-[72px]">
+          <label className="bg-[#F8FAFC] border border-slate-200 rounded-2xl py-3 px-5 flex justify-center items-center shadow-inner min-h-[60px]">
             <span className="sr-only">Patient token</span>
             <input
               type="text"
@@ -136,7 +136,7 @@ export const PatientTokenPage: React.FC = () => {
               onKeyDown={handleTokenKeyDown}
               placeholder="----"
               maxLength={12}
-              className="w-full bg-transparent text-center font-mono text-3xl font-extrabold tracking-widest text-[#0A1926] placeholder:text-slate-300 outline-none"
+              className="w-full bg-transparent text-center font-mono text-2xl font-extrabold tracking-widest text-[#0A1926] placeholder:text-slate-300 outline-none"
             />
           </label>
 
@@ -151,7 +151,7 @@ export const PatientTokenPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading || !token.trim()}
-            className={`w-full py-5 rounded-2xl font-bold text-xl transition-all shadow-lg flex items-center justify-center gap-2 ${
+            className={`w-full py-3 rounded-2xl font-bold text-lg transition-all shadow-lg flex items-center justify-center gap-2 ${
               loading || !token.trim()
                 ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
                 : 'bg-gradient-to-r from-[#0D9488] to-[#059669] hover:from-teal-700 hover:to-emerald-700 active:scale-98 text-white'

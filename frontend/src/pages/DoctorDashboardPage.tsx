@@ -70,15 +70,15 @@ export const DoctorDashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between items-center px-4 py-4 max-w-6xl mx-auto w-full">
-      <div className="w-full bg-[#0C3B4A] text-white p-4 md:p-5 rounded-3xl shadow-xl flex flex-wrap items-center justify-between gap-4 border-b-4 border-[#00C9A7]">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-[#00C9A7] text-slate-950 flex items-center justify-center">
-            <Stethoscope className="w-10 h-10" />
+    <div className="flex-1 flex flex-col justify-start items-center px-4 py-3 max-w-6xl mx-auto w-full">
+      <div className="w-full bg-[#0C3B4A] text-white p-3 md:p-4 rounded-3xl shadow-xl flex flex-wrap items-center justify-between gap-3 border-b-4 border-[#00C9A7]">
+        <div className="flex items-center gap-3">
+          <div className="w-14 h-14 rounded-2xl bg-[#00C9A7] text-slate-950 flex items-center justify-center">
+            <Stethoscope className="w-8 h-8" />
           </div>
           <div>
-            <h2 className="text-3xl font-black">Doctor Dashboard Portal</h2>
-            <p className="text-cyan-200 text-lg">
+            <h2 className="text-2xl font-black">Doctor Dashboard Portal</h2>
+            <p className="text-cyan-200 text-base">
               Logged in as: <strong className="text-white">{doctor?.name || 'Dr. Practitioner'}</strong> ({doctor?.email || 'doctor@hospital.org'})
             </p>
           </div>
@@ -86,18 +86,18 @@ export const DoctorDashboardPage: React.FC = () => {
 
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 bg-rose-600/30 hover:bg-rose-600 text-rose-200 hover:text-white font-bold px-6 py-3 rounded-2xl border border-rose-500/40 text-lg transition-all active:scale-95"
+          className="flex items-center gap-2 bg-rose-600/30 hover:bg-rose-600 text-rose-200 hover:text-white font-bold px-4 py-2 rounded-2xl border border-rose-500/40 text-base transition-all active:scale-95"
         >
           <LogOut className="w-6 h-6" />
           <span>LOG OUT</span>
         </button>
       </div>
 
-      <div className="kiosk-card w-full p-5 md:p-8 rounded-[2.5rem] shadow-2xl border-4 border-slate-200 bg-white my-4 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
+      <div className="kiosk-card w-full p-4 md:p-5 rounded-[2rem] shadow-2xl border-2 border-slate-200 bg-white my-2 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b pb-4">
           <div>
-            <h3 className="text-3xl font-black text-[#0C3B4A]">Active Patient Queue & Triage Summaries</h3>
-            <p className="text-xl text-slate-600 mt-1">Select a patient to review the current intake state.</p>
+            <h3 className="text-2xl font-black text-[#0C3B4A]">Active Patient Queue & Triage Summaries</h3>
+            <p className="text-base text-slate-600 mt-1">Select a patient to review the current intake state.</p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -140,11 +140,11 @@ export const DoctorDashboardPage: React.FC = () => {
               return (
                 <div
                   key={patient.session_id}
-                  className={`p-6 rounded-3xl border-2 flex flex-wrap items-center justify-between gap-4 shadow-sm transition-all ${
+                  className={`p-4 rounded-3xl border-2 flex flex-wrap items-center justify-between gap-3 shadow-sm transition-all ${
                     patient.priority_flag ? 'border-amber-300 bg-amber-50/50 hover:border-amber-500' : 'border-slate-200 bg-slate-50 hover:border-slate-400'
                   }`}
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <div className={`w-14 h-14 rounded-2xl text-white flex items-center justify-center font-bold text-xl ${patient.priority_flag ? 'bg-amber-500' : 'bg-teal-600'}`}>
                       {patientName
                         .split(' ')
@@ -154,13 +154,13 @@ export const DoctorDashboardPage: React.FC = () => {
                         .toUpperCase() || 'P'}
                     </div>
                     <div>
-                      <h4 className="text-2xl font-bold text-slate-900">
+                      <h4 className="text-xl font-bold text-slate-900">
                         Patient: {patientName}
                         {!patient.priority_flag && patient.was_priority_flag ? (
                           <span className="ml-2 text-red-600" title="Previously red flagged">★</span>
                         ) : null}
                       </h4>
-                      <p className="text-lg text-slate-600">
+                      <p className="text-base text-slate-600">
                         Token: {patient.token} • {summaryText}
                       </p>
                       {patient.priority_flag && (

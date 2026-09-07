@@ -15,15 +15,15 @@ export const OnScreenKeypad: React.FC<KeypadProps> = ({
   const numericKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
   return (
-    <div className="w-full max-w-sm mx-auto select-none space-y-3">
+    <div className="w-full max-w-sm mx-auto select-none space-y-2">
       {/* 3x3 Top Grid */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2">
         {numericKeys.map((num) => (
           <button
             key={num}
             type="button"
             onClick={() => onKeyPress(num)}
-            className="h-16 bg-[#F1F5F9] hover:bg-slate-200 active:bg-slate-300 active:scale-95 text-[#0A1926] font-extrabold text-2xl rounded-2xl transition-all flex items-center justify-center shadow-sm"
+            className="h-14 bg-[#F1F5F9] hover:bg-slate-200 active:bg-slate-300 active:scale-95 text-[#0A1926] font-extrabold text-xl rounded-2xl transition-all flex items-center justify-center shadow-sm"
           >
             {num}
           </button>
@@ -31,13 +31,13 @@ export const OnScreenKeypad: React.FC<KeypadProps> = ({
       </div>
 
       {/* Bottom Row: Empty, 0, Backspace */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="h-16" />
+      <div className="grid grid-cols-3 gap-2">
+        <div className="h-14" />
 
         <button
           type="button"
           onClick={() => onKeyPress('0')}
-          className="h-16 bg-[#F1F5F9] hover:bg-slate-200 active:bg-slate-300 active:scale-95 text-[#0A1926] font-extrabold text-2xl rounded-2xl transition-all flex items-center justify-center shadow-sm"
+          className="h-14 bg-[#F1F5F9] hover:bg-slate-200 active:bg-slate-300 active:scale-95 text-[#0A1926] font-extrabold text-xl rounded-2xl transition-all flex items-center justify-center shadow-sm"
         >
           0
         </button>
@@ -45,7 +45,7 @@ export const OnScreenKeypad: React.FC<KeypadProps> = ({
         <button
           type="button"
           onClick={onDelete}
-          className="h-16 bg-[#F1F5F9] hover:bg-rose-100 active:scale-95 text-slate-700 hover:text-rose-600 font-bold rounded-2xl transition-all flex items-center justify-center shadow-sm"
+          className="h-14 bg-[#F1F5F9] hover:bg-rose-100 active:scale-95 text-slate-700 hover:text-rose-600 font-bold rounded-2xl transition-all flex items-center justify-center shadow-sm"
         >
           <Delete className="w-7 h-7" />
         </button>

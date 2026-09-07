@@ -136,11 +136,11 @@ export const MobileUploadPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#071822] text-slate-900 flex flex-col justify-between p-4 md:p-6 font-sans">
+    <div className="min-h-screen bg-[#071822] text-slate-900 flex flex-col justify-start p-4 md:p-5 font-sans">
       {/* Mobile Top Header with NivaKiosk Branding */}
-      <header className="w-full text-center pt-4 pb-6">
-        <div className="inline-flex items-center justify-center bg-white p-3 rounded-2xl shadow-xl mb-3 border border-white/20">
-          <img src="/logo.png" alt="NivaKiosk Logo" className="h-10 w-auto object-contain" />
+      <header className="w-full text-center pt-2 pb-4">
+        <div className="inline-flex items-center justify-center mb-3">
+          <img src="/new-niva.png" alt="NivaKiosk Logo" className="h-12 w-auto object-contain" />
         </div>
         <h1 className="text-xl font-black text-white tracking-tight">
           Niva<span className="text-[#0D9488]">Kiosk</span> Medical Upload
@@ -148,11 +148,11 @@ export const MobileUploadPage: React.FC = () => {
       </header>
 
       {/* Main Mobile Upload Container Card */}
-      <main className="flex-1 max-w-md w-full mx-auto bg-white rounded-3xl p-6 shadow-2xl space-y-6 my-auto">
+      <main className="flex-1 max-w-md w-full mx-auto bg-white rounded-3xl p-4 shadow-2xl space-y-4">
         
         {!isVerified ? (
           /* VERIFICATION STEP */
-          <div className="space-y-6 py-4">
+          <div className="space-y-4 py-2">
             <div className="text-center space-y-2">
               <div className="w-16 h-16 rounded-full bg-teal-100 text-teal-600 mx-auto flex items-center justify-center mb-4">
                 <KeyRound className="w-8 h-8" />
@@ -179,14 +179,14 @@ export const MobileUploadPage: React.FC = () => {
                   onChange={(e) => setPatientToken(e.target.value.toUpperCase())}
                   placeholder="e.g. 001"
                   maxLength={4}
-                  className="w-full text-center text-4xl font-black text-slate-800 tracking-[0.2em] p-4 rounded-2xl border-2 border-slate-200 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 outline-none transition-all"
+                  className="w-full text-center text-3xl font-black text-slate-800 tracking-[0.2em] p-3 rounded-2xl border-2 border-slate-200 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 outline-none transition-all"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={verifying || !patientToken}
-                className="w-full py-4 bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-bold text-lg rounded-2xl shadow-lg active:scale-95 disabled:opacity-50 transition-all flex justify-center items-center gap-2"
+                className="w-full py-3 bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-bold text-base rounded-2xl shadow-lg active:scale-95 disabled:opacity-50 transition-all flex justify-center items-center gap-2"
               >
                 {verifying ? (
                   <Loader2 className="w-6 h-6 animate-spin" />
@@ -218,7 +218,7 @@ export const MobileUploadPage: React.FC = () => {
             )}
 
             {/* ACTION BUTTONS: CAMERA & GALLERY */}
-            <div className="space-y-3 pt-2">
+            <div className="space-y-2 pt-1">
               {/* Hidden File Inputs */}
               <input
                 ref={cameraInputRef}
@@ -241,7 +241,7 @@ export const MobileUploadPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => cameraInputRef.current?.click()}
-                className="w-full py-4 px-6 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 active:scale-98 text-white font-bold text-lg rounded-2xl shadow-md transition-all flex items-center justify-center gap-3"
+                className="w-full py-3 px-4 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 active:scale-98 text-white font-bold text-base rounded-2xl shadow-md transition-all flex items-center justify-center gap-3"
               >
                 <Camera className="w-6 h-6" />
                 <span>📷 TAKE PHOTO</span>
@@ -251,7 +251,7 @@ export const MobileUploadPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => galleryInputRef.current?.click()}
-                className="w-full py-4 px-6 bg-[#F1F5F9] hover:bg-slate-200 active:scale-98 text-slate-800 font-bold text-lg rounded-2xl transition-all flex items-center justify-center gap-3 border border-slate-200"
+                className="w-full py-3 px-4 bg-[#F1F5F9] hover:bg-slate-200 active:scale-98 text-slate-800 font-bold text-base rounded-2xl transition-all flex items-center justify-center gap-3 border border-slate-200"
               >
                 <FolderPlus className="w-6 h-6 text-teal-700" />
                 <span>📁 CHOOSE FROM PHONE</span>
@@ -265,7 +265,7 @@ export const MobileUploadPage: React.FC = () => {
                   Selected Documents ({selectedFiles.length})
                 </h3>
 
-                <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                   {selectedFiles.map((item) => (
                     <div
                       key={item.id}
@@ -315,7 +315,7 @@ export const MobileUploadPage: React.FC = () => {
                 type="button"
                 onClick={handleUpload}
                 disabled={loading || selectedFiles.length === 0}
-                className={`w-full py-4.5 rounded-2xl font-black text-xl transition-all shadow-lg flex items-center justify-center gap-2 ${
+                className={`w-full py-3 rounded-2xl font-black text-lg transition-all shadow-lg flex items-center justify-center gap-2 ${
                   loading || selectedFiles.length === 0
                     ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
                     : 'bg-gradient-to-r from-[#0D9488] to-[#059669] hover:from-teal-700 hover:to-emerald-700 active:scale-98 text-white'

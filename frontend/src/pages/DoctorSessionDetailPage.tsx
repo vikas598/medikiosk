@@ -168,9 +168,9 @@ export const DoctorSessionDetailPage: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 flex flex-col px-4 py-8 max-w-7xl mx-auto w-full">
-      <div className="w-full bg-[#0C3B4A] text-white p-6 rounded-3xl shadow-xl flex flex-wrap items-center justify-between gap-4 border-b-4 border-[#00C9A7]">
-        <div className="flex items-center gap-4">
+    <div className="flex-1 flex flex-col px-4 py-4 max-w-7xl mx-auto w-full">
+      <div className="w-full bg-[#0C3B4A] text-white p-4 rounded-3xl shadow-xl flex flex-wrap items-center justify-between gap-3 border-b-4 border-[#00C9A7]">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => navigate('/doctor/dashboard')}
@@ -181,7 +181,7 @@ export const DoctorSessionDetailPage: React.FC = () => {
           </button>
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-cyan-200">Patient Record</p>
-            <h1 className="text-3xl font-black">{session.patient.name || 'Unknown patient'}</h1>
+            <h1 className="text-2xl font-black">{session.patient.name || 'Unknown patient'}</h1>
             <p className="text-sm text-cyan-100">Patient ID: {session.patient_id}</p>
           </div>
         </div>
@@ -202,9 +202,9 @@ export const DoctorSessionDetailPage: React.FC = () => {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.9fr] gap-6 mt-8 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.9fr] gap-4 mt-4 items-start">
         <div className="contents xl:block space-y-6">
-        <section id="summary" className="bg-white rounded-[2rem] shadow-xl border-2 border-teal-200 p-6 scroll-mt-8">
+        <section id="summary" className="bg-white rounded-[2rem] shadow-xl border-2 border-teal-200 p-4 scroll-mt-8">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4 mb-5">
             <div className="flex items-center gap-3">
               <FileText className="w-7 h-7 text-teal-700" />
@@ -298,7 +298,7 @@ export const DoctorSessionDetailPage: React.FC = () => {
           ) : null}
         </section>
 
-        <section id="transcript" className="self-start bg-white rounded-[2rem] shadow-xl border border-slate-200 p-6 scroll-mt-8">
+        <section id="transcript" className="self-start bg-white rounded-[2rem] shadow-xl border border-slate-200 p-4 scroll-mt-8">
           <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-4">
             <div className="flex items-center gap-3">
               <MessageSquare className="w-6 h-6 text-[#0C3B4A]" />
@@ -329,7 +329,7 @@ export const DoctorSessionDetailPage: React.FC = () => {
         </div>
 
         <div className="contents xl:block space-y-6">
-          <section id="flags" className={`self-start rounded-[2rem] shadow-xl p-6 scroll-mt-8 ${flagReadings.length > 0 ? 'bg-amber-50 border-2 border-amber-300' : 'bg-white border border-slate-200'}`}>
+          <section id="flags" className={`self-start rounded-[2rem] shadow-xl p-4 scroll-mt-8 ${flagReadings.length > 0 ? 'bg-amber-50 border-2 border-amber-300' : 'bg-white border border-slate-200'}`}>
             <div className="flex items-center gap-3 border-b border-slate-200/80 pb-4 mb-4">
               <ShieldAlert className={`w-7 h-7 ${flagReadings.length > 0 ? 'text-amber-700' : 'text-slate-500'}`} />
               <div>
@@ -355,7 +355,7 @@ export const DoctorSessionDetailPage: React.FC = () => {
           </section>
 
         <div className="space-y-6">
-          <section id="documents" className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-6 scroll-mt-8">
+          <section id="documents" className="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-4 scroll-mt-8">
             <div className="flex items-center gap-3 border-b border-slate-200 pb-4 mb-4">
               <Files className="w-6 h-6 text-[#0C3B4A]" />
               <h2 className="text-2xl font-black text-[#0C3B4A]">Documents</h2>

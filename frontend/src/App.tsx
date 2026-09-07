@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Header } from './components/Header';
 import { LandingPage } from './pages/LandingPage';
@@ -11,6 +12,7 @@ import { KioskDocumentUploadPage } from './pages/KioskDocumentUploadPage';
 import { MobileUploadPage } from './pages/MobileUploadPage';
 
 function AppContent() {
+  const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
   const themeClass = location.pathname.startsWith('/patient')
     ? 'patient-theme'
@@ -18,8 +20,23 @@ function AppContent() {
       ? 'doctor-theme'
       : '';
 
+  useEffect(() => {
+    const loadingTimer = window.setTimeout(() => setIsLoading(false), 5500);
+
+    return () => window.clearTimeout(loadingTimer);
+  }, []);
+
   return (
-    <div className={`min-h-screen flex flex-col bg-[#071822] text-slate-900 font-sans selection:bg-[#0D9488] selection:text-white ${themeClass}`}>
+    <>
+      {isLoading && (
+        <div className="app-loading-overlay" role="status" aria-label="Loading NivaKiosk">
+          <div className="app-loading-card">
+            <img src="/new-niva.png" alt="NivaKiosk" className="app-loading-logo" />
+            <span className="app-loading-dots" aria-hidden="true"><i /><i /><i /></span>
+          </div>
+        </div>
+      )}
+      <div className={`min-h-screen flex flex-col bg-[#071822] text-slate-900 font-sans selection:bg-[#0D9488] selection:text-white ${themeClass}`}>
         {/* Render Main Header except on standalone Mobile Upload route */}
         <Routes>
           <Route path="/mobile-upload/:token" element={null} />
@@ -41,7 +58,8 @@ function AppContent() {
             <Route path="/mobile-upload/:token" element={<MobileUploadPage />} />
           </Routes>
         </main>
-    </div>
+      </div>
+    </>
   );
 }
 
