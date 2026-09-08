@@ -143,7 +143,7 @@ export const ReceptionRegister: React.FC = () => {
 
             {/* ABHA/Aadhaar stubs for architectural readiness */}
             <div className="border-t border-gray-100 pt-6 mt-6">
-              <p className="text-sm font-semibold text-gray-400 mb-3">Optional identity linkage (coming soon)</p>
+              <p className="text-sm font-semibold text-gray-400 mb-3">Optional identity linkage</p>
               <div className="flex gap-3">
                 <button type="button" disabled className="flex-1 py-3 border-2 border-gray-100 bg-gray-50 rounded-xl text-gray-400 font-medium cursor-not-allowed">
                   Link ABHA ID
